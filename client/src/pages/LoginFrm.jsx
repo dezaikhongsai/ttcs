@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Form, Input, Button, Alert } from "antd";
 import { useNavigate } from "react-router-dom";
 import "antd/dist/reset.css";
-
+import './Login.css';
 const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    <div  className="flex items-center justify-center h-screen bg-gray-100" >
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4 text-center">Đăng nhập</h2>
         {error && <Alert message={error} type="error" showIcon className="mb-4" />}
