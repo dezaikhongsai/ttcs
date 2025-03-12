@@ -1,10 +1,10 @@
-function App() {
+import LoginFrm from './components/Form/LoginFrm'
 
+function App() {
   return (
     <>
-        <div>Hello client</div>     
+        <LoginFrm></LoginFrm>   
     </>
   )
 }
-
 export default App
