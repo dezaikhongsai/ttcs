@@ -30,7 +30,7 @@ const Login = () => {
       id="bgr"
       className="flex items-center justify-center h-screen bg-gray-100"
     >
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+      <div id="mainForm" className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4 text-center">Đăng nhập</h2>
         {error && (
           <Alert message={error} type="error" showIcon className="mb-4" />
