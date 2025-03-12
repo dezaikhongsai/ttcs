@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Form, Input, Button, Alert } from "antd";
 import { useNavigate } from "react-router-dom";
 import "antd/dist/reset.css";
-import './Login.css';
+import '../styles/loginForm.css';
 const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
