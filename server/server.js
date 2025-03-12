@@ -1,11 +1,22 @@
-import express from 'express'
-const app = express()
-const port = 3000
+import express from "express";
+import dotenv from "dotenv";
+import connectDB from "./database/db.js";
+import userRoutes from "./routes/userRoutes.js";
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+dotenv.config(); // Load biến môi trường
 
-app.listen(port, () => {
-  console.log(`Server running on: http://localhost:${port}`)
-})
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(express.json()); // Middleware để parse JSON
+
+// Kết nối MongoDB
+connectDB();
+
+// Routes
+app.use("/api/users", userRoutes);
+
+// Khởi động server
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+});
