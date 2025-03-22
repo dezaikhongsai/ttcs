@@ -19,6 +19,18 @@ export const createEmployee = async (employeeCode,name , staff, salaryPerHour , 
   }
 };
 
+export const deleteEmployee = async (id) => {
+  try {
+    const deletedEmployee = await Employee.findByIdAndDelete(id);
+    if (!deletedEmployee) {
+      throw new Error("Employee not found");
+    }
+    return { message: "Employee deleted successfully", deletedEmployee };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+// Lấy danh sách employee
 export const getEmployee = async () => {
   return await Employee.find();
 };

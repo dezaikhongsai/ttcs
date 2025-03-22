@@ -10,7 +10,17 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [token, setToken] = useState(() => localStorage.getItem("token") || "");
-  const [role, setRole] = useState(() => localStorage.getItem("role") || ""); // Thêm state role
+  const [role, setRole] = useState(() => localStorage.getItem("role") || "");
+
+  // Kiểm tra user khi component mount
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      console.log("User từ localStorage khi refresh:", storedUser);
+      setUser(storedUser);
+      setRole(storedUser.role);
+    }
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -22,21 +32,23 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
+      console.log("User cập nhật trong AuthContext:", user);
       localStorage.setItem("user", JSON.stringify(user));
-      setRole(user.role); // Cập nhật role từ user
-      localStorage.setItem("role", user.role);
+      setRole(user.role || "staff"); // Đảm bảo có giá trị role hợp lệ
+      localStorage.setItem("role", user.role || "staff");
     } else {
       localStorage.removeItem("user");
-      setRole(""); // Xóa role nếu user null
+      setRole("");
       localStorage.removeItem("role");
     }
   }, [user]);
 
   const login = (userData, authToken) => {
+    console.log("Dữ liệu user khi login:", userData);
     setUser(userData);
     setToken(authToken);
-    setRole(userData.role); // Lưu role khi login
-    localStorage.setItem("role", userData.role);
+    setRole(userData.role || "staff"); // Nếu role không có, mặc định là "staff"
+    localStorage.setItem("role", userData.role || "staff");
   };
 
   const logout = () => {
@@ -54,3 +66,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

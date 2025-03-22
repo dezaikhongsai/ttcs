@@ -11,7 +11,7 @@ const EmployeeModal = ({ visible, onClose, employee }) => {
     >
       <Form layout="vertical">
         <Form.Item label="Mã nhân viên">
-          <Input value={employee?.employeeCode} disabled />
+          <Input value={employee?.employeeCode}  />
         </Form.Item>
         <Form.Item label="Họ và tên">
           <Input value={employee?.name} disabled />

@@ -16,6 +16,15 @@ export const fetchEmployees = async (setEmployee, setLoading) => {
         setLoading(false);
     } catch (e) {
         setLoading(false);
-        alert('Error:' + e);
+    }
+}
+
+export const deleteEmployee = async (id) => {
+    try {
+        const res = await axios.delete(`${import.meta.env.VITE_SERVER_URL}/employees/delete/${id}`);
+        console.log(res.data.message);
+        return res.data;
+    } catch (e) {
+        throw new Error(e.message);
     }
 }
