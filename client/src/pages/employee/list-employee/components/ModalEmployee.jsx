@@ -4,7 +4,7 @@ import { Modal, Descriptions } from "antd";
 const ModalEmployee = ({ visible, onClose, employee }) => {
   return (
     <Modal
-      title="Thông tin nhân viên"
+      title= {`Thông tin nhân viên ${employee ? employee.name : ""}`}
       open={visible}
       onCancel={onClose}
       footer={null} // Không hiển thị footer
