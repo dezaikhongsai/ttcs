@@ -3,14 +3,14 @@ import Cookies from 'js-cookie';
 
 // Tạo instance của axios
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL + '/api', // Base URL cho tất cả các API
+  baseURL: import.meta.env.VITE_API_URL + '/api', 
   headers: {
     'Content-Type': 'application/json',
     },
-    withCredentials: true, // Bật gửi cookie
+    withCredentials: true, 
 });
 
-// Interceptor để thêm token vào header của mỗi request
+// Interceptor để thêm token vào heade   r của mỗi request
 apiClient.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
