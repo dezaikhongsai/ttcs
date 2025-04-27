@@ -47,7 +47,7 @@ const ModalEmployeeForm = ({
 
   return (
     <Modal
-      title={mode === 1 ? "Thêm nhân viên mới" : "Sửa thông tin nhân viên"}
+      title={mode === 1 ? "Thêm nhân viên mới" : `Cập nhật thông tin nhân viên: ${employeeData.name}`}
       open={visible}
       onCancel={() => {
         form.resetFields(); // Reset form khi đóng modal
