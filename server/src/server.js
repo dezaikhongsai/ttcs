@@ -5,7 +5,8 @@ import connectDB from './configs/db.config.js';
 import employeeRoutes from './routes/employee.route.js';
 import authRoutes from './routes/auth.route.js';
 import cookieParser from 'cookie-parser';
-
+import shiftRoute from './routes/shift.route.js'
+import assignmentRoute from './routes/assignment.route.js';
 dotenv.config();
 
 const app = express();
@@ -22,6 +23,8 @@ app.use(express.json());
 
 app.use('/api/employees', employeeRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api', shiftRoute);
+app.use('/api/assignment', assignmentRoute);
 
 
 // Connect to MongoDB and start server
