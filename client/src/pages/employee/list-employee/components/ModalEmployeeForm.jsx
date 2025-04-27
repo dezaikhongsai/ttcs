@@ -1,10 +1,24 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, DatePicker, InputNumber, message } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  InputNumber,
+  message,
+} from "antd";
 import moment from "moment"; // Import moment
 
 const { Option } = Select;
 
-const ModalEmployeeForm = ({ visible, onClose, onSubmit, mode, employeeData }) => {
+const ModalEmployeeForm = ({
+  visible,
+  onClose,
+  onSubmit,
+  mode,
+  employeeData,
+}) => {
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -107,6 +121,10 @@ const ModalEmployeeForm = ({ visible, onClose, onSubmit, mode, employeeData }) =
             placeholder="Nhập lương theo giờ"
             style={{ width: "100%" }}
             min={0}
+            formatter={
+              (value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") // Thêm dấu phẩy
+            }
+            parser={(value) => value.replace(/\$\s?|(,*)/g, "")} // Loại bỏ dấu phẩy khi lưu
           />
         </Form.Item>
       </Form>
