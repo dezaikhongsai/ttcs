@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['Admin', 'Manager', 'Staff'],
+    enum: ['Admin', 'Manager', 'CamOp', 'Photographer', 'Staff'],
     default: 'Staff'
   },
   employeeId: {
@@ -26,6 +26,7 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
 
 // Hash password trước khi lưu
 userSchema.pre('save', async function(next) {

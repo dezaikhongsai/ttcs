@@ -1,7 +1,7 @@
-import Employee from '../models/employee.model.js';
+import NhanVien from '../models/employee.model.js';
 
 export const createEmployee = async (data) => {
-  const newEmp = new Employee(data);
+  const newEmp = new NhanVien(data);
   return await newEmp.save();
 };
 

@@ -68,7 +68,8 @@ const MainLayout = ({ children }) => {
               { key: '1', label: 'Dashboard' },
               { key: '2', label: 'Quản lý nhân viên' },
               { key: '3', label: 'Bảng lương' },
-              { key: '4', label: 'Cài đặt' },
+              { key: '4', label: 'Lịch làm việc'},
+              { key: '5', label: 'Cài đặt' },
             ]}
           />
         </Sider>
