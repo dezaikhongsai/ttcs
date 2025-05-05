@@ -1,4 +1,4 @@
-import { createAssignment, getAllAssignments, updateAssignmentStatus } from '../services/assignment.service.js';
+import { createAssignment, getAllAssignments, updateAssignmentStatus, getAssignmentsByEmployeeId } from '../services/assignment.service.js';
 
 export const createAssignmentController = async (req, res) => {
   try {
@@ -41,6 +41,25 @@ export const updateAssignmentStatusController = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: error.message || 'Không thể cập nhật trạng thái đăng ký ca làm!',
+    });
+  }
+};
+
+export const getAssignmentsByEmployeeIdController = async (req, res) => {
+  try {
+    const { employeeId } = req.params; 
+    if (!employeeId) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp employeeId!' });
+    }
+
+    const assignments = await getAssignmentsByEmployeeId(employeeId);
+    res.status(200).json({
+      message: 'Lấy danh sách assignment thành công!',
+      data: assignments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Không thể lấy danh sách assignment!',
     });
   }
 };

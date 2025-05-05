@@ -1,152 +1,139 @@
-import React, { useState } from 'react';
-import { Calendar, Modal, Form, Select, Button, Table, message } from 'antd';
-import dayjs from 'dayjs';
-
+import React, { useEffect, useState } from 'react';
+import { Button, message, Form } from 'antd';
+import { getWorkSchedule , addAssignment , getAssignmentInRole} from './services/assignment.service';
+import CalendarView from './components/CalendarView';
+import ScheduleTable from './components/AssignmentTable';
+import { useSelector } from 'react-redux';
 const ShiftRegistration = () => {
-  // Hard-coded data
-  const shifts = [
-    { id: 'shift1', name: 'Ca sáng', time: '08:00 - 14:00' },
-    { id: 'shift2', name: 'Ca tối', time: '14:00 - 20:00' },
-  ];
-
-  const [schedules, setSchedules] = useState([
-    {
-      id: '1',
-      date: '2025-04-25',
-      shiftName: 'Ca sáng',
-      status: 'pending',
-    },
-    {
-      id: '2',
-      date: '2025-04-26',
-      shiftName: 'Ca tối',
-      status: 'approved',
-    },
-  ]);
-
+  const [schedules, setSchedules] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [form] = Form.useForm();
+  const [isCalendarView, setIsCalendarView] = useState(true);
+  const [workSchedule, setWorkSchedule] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [trigger , setTrigger] = useState(false)
+  const employee = useSelector((state) => state.auth.user?.employeeId);
+  const [columns, setColumns] = useState({
+    day : '',
+    employee: '',
+    workSchedule: '',
+    status:''
+  })
+  useEffect(() => {
+    if (isModalVisible) {
+      const fetchWorkSchedule = async () => {
+        try {
+          const data = await getWorkSchedule();
+          if (Array.isArray(data)) {
+            setWorkSchedule(data);
+          } else {
+            console.error('API getWorkSchedule trả về dữ liệu không hợp lệ:', data);
+            setWorkSchedule([]);
+          }
+        } catch (error) {
+          console.error('Lỗi khi gọi API getWorkSchedule:', error);
+        }
+      };
+      fetchWorkSchedule();
+    }
+  }, [isModalVisible]);
 
-  // Handle date selection
-  const handleDateSelect = (value) => {
-    setSelectedDate(value);
-    setIsModalVisible(true);
-  };
+  useEffect(() => {
+    if (!isCalendarView) {
+      const fectchAssignment = async () => {
+        const res = await getAssignmentInRole(employee.position, employee._id);
+        setAssignments(res)
+      }
+      fectchAssignment();
+      console.log('Assignments:', res)
+    }
+  }, [trigger , isCalendarView])
+const handleOk = async () => {
+  try {
+    const values = await form.validateFields(); 
+    const assignmentData = {
+      employee: {_id : employee._id}, 
+      day: selectedDate.format('YYYY-MM-DD'), // định dạng ngày
+      workSchedule: {_id : values.workSchedule}, // giá trị key từ dropdown
+      // position: employee.position,
+    };
 
-  // Handle form submission
-  const handleOk = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        const newSchedule = {
-          id: String(schedules.length + 1),
-          date: selectedDate.format('YYYY-MM-DD'),
-          shiftName: shifts.find((shift) => shift.id === values.shift).name,
-          status: 'pending',
-        };
-        setSchedules([...schedules, newSchedule]);
-        message.success('Đăng ký ca thành công!');
-        form.resetFields();
-        setIsModalVisible(false);
-      })
-      .catch((info) => {
-        console.log('Validate Failed:', info);
-      });
-  };
+    await addAssignment(assignmentData);
+    message.success('Đăng ký ca làm thành công!');
+    setIsModalVisible(false);
+    form.resetFields(); // reset form khi đăng ký xong
+  } catch (error) {
+    message.error(error.message || 'Đăng ký ca làm thất bại!');
+  }
+  setTrigger(!trigger);
+};
 
-  // Handle modal cancel
+
   const handleCancel = () => {
     form.resetFields();
     setIsModalVisible(false);
   };
 
-  // Handle cancel schedule
-  const handleCancelSchedule = (id) => {
-    setSchedules(schedules.filter((schedule) => schedule.id !== id));
-    message.success('Hủy ca thành công!');
-  };
+ const handleCancelSchedule = (id) => {
+  setAssignments((prev) => prev.filter((schedule) => schedule._id !== id));
+  message.success('Hủy ca thành công!');
+};
 
-  // Table columns
-  const columns = [
-    {
-      title: 'Ngày',
-      dataIndex: 'date',
-      key: 'date',
-      render: (text) => dayjs(text).format('DD/MM/YYYY'),
-    },
-    {
-      title: 'Ca',
-      dataIndex: 'shiftName',
-      key: 'shiftName',
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text) => (text === 'pending' ? 'Chờ duyệt' : 'Đã duyệt'),
-    },
-    {
-      title: 'Hành động',
-      key: 'action',
-      render: (_, record) =>
-        record.status === 'pending' ? (
-          <Button
-            danger
-            onClick={() => handleCancelSchedule(record.id)}
-          >
-            Hủy
-          </Button>
-        ) : null,
-    },
-  ];
+
+  const dateCellRender = (value) => {
+    const formattedDate = value.format('YYYY-MM-DD');
+    const daySchedules = schedules.filter((schedule) => schedule.date === formattedDate);
+
+    return (
+      <ul className="events">
+        {daySchedules.map((item) => (
+          <li key={item.id}>
+            <Badge
+              status={item.status === 'approved' ? 'success' : item.status === 'pending' ? 'warning' : 'default'}
+              text={`${item.shiftName} (${item.status === 'approved' ? 'Đã duyệt' : 'Chờ duyệt'})`}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Đăng ký lịch làm việc</h2>
-      
-      {/* Calendar */}
-      <Calendar
-        onSelect={handleDateSelect}
-        disabledDate={(current) =>
-          current && current < dayjs().startOf('day')
-        }
-      />
-
-      {/* Modal for shift registration */}
-      <Modal
-        title={`Đăng ký ca làm việc cho ngày ${selectedDate?.format('DD/MM/YYYY')}`}
-        open={isModalVisible}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        okText="Đăng ký"
-        cancelText="Hủy"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="shift"
-            label="Chọn ca"
-            rules={[{ required: true, message: 'Vui lòng chọn ca!' }]}
+      <h2 className="text-2xl font-bold mb-4">Quản lý lịch làm việc</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <Button
+            type={isCalendarView ? 'primary' : 'default'}
+            onClick={() => setIsCalendarView(true)}
+            style={{ marginRight: '10px' }}
           >
-            <Select placeholder="Chọn ca làm việc">
-              {shifts.map((shift) => (
-                <Select.Option key={shift.id} value={shift.id}>
-                  {`${shift.name} (${shift.time})`}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Schedule Table */}
-      <h3 className="text-xl font-semibold mt-6 mb-2">Lịch đã đăng ký</h3>
-      <Table
-        columns={columns}
-        dataSource={schedules}
-        rowKey="id"
-        pagination={false}
-      />
+            Đăng ký lịch
+          </Button>
+          <Button
+            type={!isCalendarView ? 'primary' : 'default'}
+            onClick={() => setIsCalendarView(false)}
+          >
+            Lịch đã đăng ký
+          </Button>
+        </div>
+      </div>
+      {isCalendarView ? (
+        <CalendarView
+          isModalVisible={isModalVisible}
+          setIsModalVisible={setIsModalVisible}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          form={form}
+          workSchedule={workSchedule}
+          handleOk={handleOk}
+          handleCancel={handleCancel}
+          dateCellRender={dateCellRender}
+        />
+      ) : (
+        <ScheduleTable  schedules={Array.isArray(assignments) ? assignments : []} handleCancelSchedule={handleCancelSchedule} />
+      )}
     </div>
   );
 };
