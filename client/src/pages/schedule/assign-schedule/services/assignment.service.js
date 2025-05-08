@@ -41,3 +41,11 @@ export const getAssignmentInRole = async (role, id) => {
     throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách phân công');
   }
 };
+export const deleteAssignment = async (id) => {
+  try {
+    const response = await apiClient.delete(`${API_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Lỗi khi xóa phân công');
+  }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Modal, Form, Select, message  } from 'antd';
+import { Calendar, Modal, Form, Select, message, Badge } from 'antd';
 import dayjs from 'dayjs';
 
 const CalendarView = ({
@@ -23,7 +23,7 @@ const CalendarView = ({
       <Calendar
         onSelect={handleDateSelect}
         disabledDate={(current) => current && current < dayjs().startOf('day')}
-        dateCellRender={dateCellRender}
+        cellRender={dateCellRender}
       />
       <Modal
         title={`Đăng ký ca làm việc cho ngày ${selectedDate?.format('DD/MM/YYYY')}`}
@@ -54,12 +54,11 @@ const CalendarView = ({
             rules={[{ required: true, message: 'Vui lòng chọn vị trí!' }]}
           >
             <Select placeholder="Chọn vị trí làm việc">
-              <Select.Option value="position1">Pha chế</Select.Option>
-              <Select.Option value="position2">Phục vụ</Select.Option>
-              <Select.Option value="position3">Thu ngân</Select.Option>
+              <Select.Option value="Pha chế">Pha chế</Select.Option>
+              <Select.Option value="Phục vụ">Phục vụ</Select.Option>
+              <Select.Option value="Thu ngân">Thu ngân</Select.Option>
             </Select>
-            </Form.Item>          
-        
+          </Form.Item>
         </Form>
       </Modal>
     </>

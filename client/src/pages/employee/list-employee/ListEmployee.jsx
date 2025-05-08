@@ -193,22 +193,29 @@ const EmployeeTable = () => {
   };
 
   const handleDeleteEmployee = (employee) => {
-  Modal.confirm({
-    title: `Bạn có muốn xóa nhân viên ${employee.name}?`,
-    content: "Hành động này không thể hoàn tác.",
-    okText: "Xác nhận",
-    cancelText: "Hủy",
-    onOk: async () => {
-      try {
-        await deleteEmployee(employee._id); // Gọi API xóa nhân viên
-        message.success(`Đã xóa nhân viên: ${employee.name}`);
-        setTrigger(true); // Kích hoạt useEffect để tải lại danh sách
-      } catch (error) {
-        message.error("Không thể xóa nhân viên!");
-      }
-    },
-  });
-};
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: `Bạn có chắc chắn muốn xóa nhân viên "${employee.name}"?`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await deleteEmployee(employee._id);
+          message.success('Xóa nhân viên thành công');
+          // Cập nhật lại danh sách và thống kê
+          setTrigger(true);
+          // Cập nhật lại thống kê
+          const response = await getEmployeeStatistics();
+          setStatistics(response.data);
+        } catch (error) {
+          message.error('Không thể xóa nhân viên');
+          console.error('Error deleting employee:', error);
+        }
+      },
+    });
+  };
+
   const columns = [
     {
       title: "STT",

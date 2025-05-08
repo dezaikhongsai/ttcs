@@ -1,4 +1,4 @@
-import { createAssignment, getAllAssignments, updateAssignmentStatus, getAssignmentsByEmployeeId } from '../services/assignment.service.js';
+import { createAssignment, getAllAssignments, updateAssignmentStatus, getAssignmentsByEmployeeId , deleteAssignment} from '../services/assignment.service.js';
 
 export const createAssignmentController = async (req, res) => {
   try {
@@ -60,6 +60,20 @@ export const getAssignmentsByEmployeeIdController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: error.message || 'Không thể lấy danh sách assignment!',
+    });
+  }
+};
+
+export const deleteAssignmentController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteAssignment(id);
+    res.status(200).json({
+      message: 'Xóa đăng ký ca làm thành công!',
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message || 'Không thể xóa đăng ký ca làm!',
     });
   }
 };

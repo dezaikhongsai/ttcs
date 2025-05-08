@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button, message, Form } from 'antd';
-import { getWorkSchedule , addAssignment , getAssignmentInRole} from './services/assignment.service';
+import { getWorkSchedule , addAssignment , getAssignmentInRole } from './services/assignment.service';
 import CalendarView from './components/CalendarView';
 import ScheduleTable from './components/AssignmentTable';
 import { useSelector } from 'react-redux';
@@ -72,7 +72,7 @@ const handleOk = async () => {
       employee: {_id : employee._id}, 
       day: selectedDate.format('YYYY-MM-DD'), // định dạng ngày
       workSchedule: {_id : values.workSchedule}, // giá trị key từ dropdown
-      // position: employee.position,
+      position: values.position,
     };
 
     await addAssignment(assignmentData);
@@ -90,12 +90,6 @@ const handleOk = async () => {
     form.resetFields();
     setIsModalVisible(false);
   };
-
- const handleCancelSchedule = (id) => {
-  setAssignments((prev) => prev.filter((schedule) => schedule._id !== id));
-  message.success('Hủy ca thành công!');
-};
-
 
   const dateCellRender = (value) => {
     const formattedDate = value.format('YYYY-MM-DD');
@@ -148,7 +142,7 @@ const handleOk = async () => {
           dateCellRender={dateCellRender}
         />
       ) : (
-        <ScheduleTable schedules={assignments} handleCancelSchedule={handleCancelSchedule} />
+        <ScheduleTable schedules={assignments} onScheduleChange={() => setTrigger(!trigger)} trigger={trigger} />
       )}
     </div>
   );
