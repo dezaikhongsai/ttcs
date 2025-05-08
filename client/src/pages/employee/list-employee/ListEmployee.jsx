@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Table, Button, Space, message, Select, Row, Col, Input, Tag , Modal } from "antd";
-import { EditOutlined, EyeOutlined, DeleteOutlined, FilterOutlined } from "@ant-design/icons";
-import { getEmployee, getEmployeeById , addEmployee , updateEmployee , deleteEmployee} from "./services/employee.service.js";
+import { Table, Button, Space, message, Select, Row, Col, Input, Tag, Modal } from "antd";
+import { EditOutlined, EyeOutlined, DeleteOutlined, FilterOutlined, BarChartOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import { getEmployee, getEmployeeById, addEmployee, updateEmployee, deleteEmployee, getEmployeeStatistics } from "./services/employee.service.js";
 import ModalFilter from "./components/ModalFilter";
 import ModalEmployee from "./components/ModalEmployee";
 import debounce from "lodash.debounce";
 import ModalEmployeeForm from "./components/ModalEmployeeForm";
+import QuickStatistics from "./components/EmployeeStatistic.jsx";
 
 const EmployeeTable = () => {
   const { Option } = Select;
@@ -18,6 +19,7 @@ const EmployeeTable = () => {
     showSizeChanger: true,
     showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
   });
+  const [statistics, setStatistics] = useState({});
   const [loading, setLoading] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchName, setSearchName] = useState("");
@@ -28,8 +30,10 @@ const EmployeeTable = () => {
   const [isEmployeeModalVisible, setIsEmployeeModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isEmployeeFormVisible, setIsEmployeeFormVisible] = useState(false);
-  const [employeeFormMode, setEmployeeFormMode] = useState(1); // 1: Thêm, 2: Sửa
+  const [employeeFormMode, setEmployeeFormMode] = useState(1);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' hoặc 'statistics'
+
   const fetchEmployees = async (page = 1, pageSize = 10, filters = {}, sortBy = "name", sortOrder = "asc") => {
     setLoading(true);
     try {
@@ -55,6 +59,17 @@ const EmployeeTable = () => {
       setTrigger(false);
     }
   }, [trigger]);
+  useEffect(() => { 
+    const fetchStatistics = async () => {
+      try {
+        const response = await getEmployeeStatistics();
+        setStatistics(response.data);
+      } catch (error) {
+        message.error("Không thể tải thống kê nhân viên");
+      }
+    };
+    fetchStatistics();
+  }, []);
 
   useEffect(() => {
     setTrigger(true);
@@ -307,56 +322,87 @@ const EmployeeTable = () => {
 
   return (
     <div className="p-4">
-      <Row className="mb-4">
-        {filterTags.map((tag) => (
-          <Tag
-            key={tag.key}
-            closable
-            onClose={() => handleRemoveTag(tag.key)}
-          >
-            {tag.label}
-          </Tag>
-        ))}
-      </Row>
-     <Row justify="space-between" align="middle" className="mb-4">
-      <Col>
-        <Input.Search placeholder="Tìm kiếm theo tên" allowClear onChange={handleSearch} style={{ width: 300 }} />
+      {/* Nút chuyển đổi view */}
+      <Row justify="start" className="mb-4">
         <Button
-          type="primary"
-          onClick={handleFilter}
-          style={{ marginLeft: 10, width: 85 }}
-          icon={<FilterOutlined />}
+          type={viewMode === 'list' ? 'primary' : 'default'}
+          icon={<UnorderedListOutlined />}
+          onClick={() => setViewMode('list')}
+          style={{ marginRight: '8px' }}
         >
-          Lọc
+          Danh sách
         </Button>
-      </Col>
-      <Col>
-        <Select defaultValue="asc" style={{ width: 200 }} onChange={handleSortChange}>
-          <Option value="asc">Sắp xếp tăng dần</Option>
-          <Option value="desc">Sắp xếp giảm dần</Option>
-          </Select>
-           <Button
-            type="primary"
-            style={{ marginLeft: 10 }}
-            onClick={handleOpenAddEmployeeModal}
-          >
-          Thêm nhân viên
+        <Button
+          type={viewMode === 'statistics' ? 'primary' : 'default'}
+          icon={<BarChartOutlined />}
+          onClick={() => setViewMode('statistics')}
+        >
+          Thống kê
         </Button>
-      </Col>
-    </Row>
-      <Table
-        columns={columns}
-        dataSource={employees}
-        pagination={{
-          ...pagination,
-          position: ["bottomCenter"],
-        }}
-        loading={loading}
-        onChange={handleTableChange}
-        rowKey="_id"
-        className="shadow-md rounded-lg"
-        scroll={{ x: "max-content" }}
-      />
+      </Row>
+
+      {viewMode === 'statistics' ? (
+        <QuickStatistics statistics={statistics} />
+      ) : (
+        <>
+          <Row className="mb-4">
+            {filterTags.map((tag) => (
+              <Tag
+                key={tag.key}
+                closable
+                onClose={() => handleRemoveTag(tag.key)}
+              >
+                {tag.label}
+              </Tag>
+            ))}
+          </Row>
+          <Row justify="space-between" align="middle" className="mb-4">
+            <Col>
+              <Input.Search 
+                placeholder="Tìm kiếm theo tên" 
+                allowClear 
+                onChange={handleSearch} 
+                style={{ width: 300 }} 
+              />
+              <Button
+                type="primary"
+                onClick={handleFilter}
+                style={{ marginLeft: 10, width: 85 }}
+                icon={<FilterOutlined />}
+              >
+                Lọc
+              </Button>
+            </Col>
+            <Col>
+              <Select defaultValue="asc" style={{ width: 200 }} onChange={handleSortChange}>
+                <Option value="asc">Sắp xếp tăng dần</Option>
+                <Option value="desc">Sắp xếp giảm dần</Option>
+              </Select>
+              <Button
+                type="primary"
+                style={{ marginLeft: 10 }}
+                onClick={handleOpenAddEmployeeModal}
+              >
+                Thêm nhân viên
+              </Button>
+            </Col>
+          </Row>
+          <Table
+            columns={columns}
+            dataSource={employees}
+            pagination={{
+              ...pagination,
+              position: ["bottomCenter"],
+            }}
+            loading={loading}
+            onChange={handleTableChange}
+            rowKey="_id"
+            className="shadow-md rounded-lg"
+            scroll={{ x: "max-content" }}
+          />
+        </>
+      )}
+
       <ModalFilter
         visible={isFilterModalVisible}
         onCancel={handleFilterCancel}

@@ -53,3 +53,12 @@ export const deleteEmployee = async (id) => {
     throw new Error(error.response?.data?.message || "Không thể xóa nhân viên");
   }
 };
+
+export const getEmployeeStatistics = async () => {
+  try {
+    const respone = await apiClient.get(`${API_URL}/statistics`);
+    return respone.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Không thể lấy thống kê nhân viên");
+  }
+}

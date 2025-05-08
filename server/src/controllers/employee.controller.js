@@ -66,3 +66,15 @@ export const deleteEmployee = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getEmployeeStatistics = async (req, res) => {
+  try {
+    const statistics = await employeeService.getEmployeeStatistics();
+    res.json({
+      message: 'Lấy thống kê nhân viên thành công',
+      data: statistics
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

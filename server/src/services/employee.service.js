@@ -73,3 +73,111 @@ export const updateEmployee = async (id, data) => {
 export const deleteEmployee = async (id) => {
   return await Employee.findByIdAndDelete(id);
 };
+
+export const getEmployeeStatistics = async () => {
+  const totalEmployees = await Employee.countDocuments();
+  
+  // Thống kê theo giới tính
+  const genderStats = await Employee.aggregate([
+    {
+      $group: {
+        _id: "$gender",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  // Tính tỉ lệ nam nữ
+  const maleCount = genderStats.find(stat => stat._id === "Nam")?.count || 0;
+  const femaleCount = genderStats.find(stat => stat._id === "Nữ")?.count || 0;
+  
+  const maleRatio = totalEmployees > 0 ? (maleCount / totalEmployees * 100).toFixed(2) : 0;
+  const femaleRatio = totalEmployees > 0 ? (femaleCount / totalEmployees * 100).toFixed(2) : 0;
+
+  // Thống kê theo vị trí
+  const positionStats = await Employee.aggregate([
+    {
+      $group: {
+        _id: "$position",
+        count: { $sum: 1 },
+        avgSalary: { $avg: "$salaryPerHour" }
+      }
+    }
+  ]);
+
+  // Thống kê theo độ tuổi
+  const ageStats = await Employee.aggregate([
+    {
+      $addFields: {
+        age: {
+          $floor: {
+            $divide: [
+              { $subtract: [new Date(), "$dob"] },
+              365 * 24 * 60 * 60 * 1000
+            ]
+          }
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          $switch: {
+            branches: [
+              { case: { $lt: ["$age", 25] }, then: "Dưới 25" },
+              { case: { $lt: ["$age", 35] }, then: "25-34" },
+              { case: { $lt: ["$age", 45] }, then: "35-44" },
+              { case: { $lt: ["$age", 55] }, then: "45-54" }
+            ],
+            default: "Trên 55"
+          }
+        },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  // Thống kê lương trung bình theo giới tính
+  const salaryByGender = await Employee.aggregate([
+    {
+      $group: {
+        _id: "$gender",
+        avgSalary: { $avg: "$salaryPerHour" },
+        minSalary: { $min: "$salaryPerHour" },
+        maxSalary: { $max: "$salaryPerHour" }
+      }
+    }
+  ]);
+
+  return {
+    totalEmployees,
+    genderStatistics: {
+      male: {
+        count: maleCount,
+        ratio: `${maleRatio}%`
+      },
+      female: {
+        count: femaleCount,
+        ratio: `${femaleRatio}%`
+      }
+    },
+    positionStatistics: positionStats.map(stat => ({
+      position: stat._id,
+      count: stat.count,
+      averageSalary: stat.avgSalary.toFixed(2)
+    })),
+    ageStatistics: ageStats.map(stat => ({
+      ageGroup: stat._id,
+      count: stat.count,
+      ratio: `${((stat.count / totalEmployees) * 100).toFixed(2)}%`
+    })),
+    salaryStatistics: {
+      byGender: salaryByGender.map(stat => ({
+        gender: stat._id,
+        averageSalary: stat.avgSalary.toFixed(2),
+        minSalary: stat.minSalary,
+        maxSalary: stat.maxSalary
+      }))
+    }
+  };
+};
