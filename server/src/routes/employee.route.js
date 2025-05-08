@@ -5,6 +5,7 @@ import {
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
+  getEmployeeStatistics,
 } from '../controllers/employee.controller.js';
 import { verifyToken , authorizeRoles } from '../middlewares/auth.middleware.js';
 
@@ -12,6 +13,7 @@ const router = express.Router();
 router.use(verifyToken); 
 router.use(authorizeRoles(['Admin' , 'Manager'])); 
 router.get('/',  getAllEmployees);
+router.get('/statistics', getEmployeeStatistics);
 router.get('/:id', getEmployeeById);
 router.post('/', createEmployee);
 router.put('/:id', updateEmployee);

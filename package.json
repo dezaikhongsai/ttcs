@@ -1,9 +1,9 @@
 {
   "scripts": {
-  "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\""
-},
-
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\""
+  },
   "dependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "recharts": "^2.15.3"
   }
 }
