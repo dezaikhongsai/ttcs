@@ -29,12 +29,15 @@ export const addAssignment = async (assignmentData) => {
   }
 }
 
-export const getAssignmentInRole = async (role , id) => {
+export const getAssignmentInRole = async (role, id) => {
   try {
-    const respone = role === 'Admin' ? await apiClient.get(API_URL) : await apiClient.get(`${API_URL}/${id}`);
-    return respone.data;
+    console.log('🔍 Gọi API getAssignmentInRole với:', role, id);
+    const response = role === 'Admin'
+      ? await apiClient.get(API_URL)
+      : await apiClient.get(`${API_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Lỗi khi gọi getAssignmentInRole:', error);
+    throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách phân công');
   }
-  catch (error) {
-    throw new Error("Lỗi :", error);
-  }
-} 
+};
