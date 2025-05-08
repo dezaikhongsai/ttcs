@@ -2,7 +2,7 @@ import Assignment from '../models/assignment.model.js';
 import Employee from '../models/employee.model.js';
 import WorkSchedule from '../models/workShcedule.js';
 export const createAssignment = async (assignmentData) => {
-  const { employee, workSchedule , status , day } = assignmentData;
+  const { employee, workSchedule , status , day , position} = assignmentData;
   const employeeData = await Employee.findById(employee._id, 'name position');
   const workScheduleData = await WorkSchedule.findById (workSchedule._id)
   if (!employeeData || !workScheduleData) {
@@ -22,7 +22,8 @@ export const createAssignment = async (assignmentData) => {
       timeStart: workScheduleData.timeStart,
       timeEnd: workScheduleData.timeEnd
     },
-    status
+    status,
+    position,
   });
 
   await newAssignment.save();

@@ -1,11 +1,35 @@
-import React, { useEffect } from 'react';
-import { Table, Button, Tag } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Table, Button, Tag, message, Modal } from 'antd';
+import { deleteAssignment } from '../services/assignment.service';
 import dayjs from 'dayjs';
 
-function ScheduleTable({ schedules, handleCancelSchedule }) {
+function ScheduleTable({ schedules, onScheduleChange, trigger }) {
   useEffect(() => {
     console.log("schedules", schedules);
   }, [schedules]);
+
+  const handleRefuseSchedule = (record) => {
+    Modal.confirm({
+      title: 'Xác nhận hủy ca',
+      content: `Bạn có chắc chắn muốn hủy ca làm việc của ${record.employee?.name || 'nhân viên'} vào ngày ${dayjs(record.day).format('DD/MM/YYYY')}?`,
+      okText: 'Xác nhận',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await deleteAssignment(record._id);
+          message.success('Hủy ca thành công!');
+          // Gọi callback để cập nhật danh sách ở component cha
+          if (onScheduleChange) {
+            onScheduleChange();
+          }
+        } catch (error) {
+          message.error('Không thể hủy ca làm việc');
+          console.error('Error refusing schedule:', error);
+        }
+      },
+    });
+  };
 
   const columns = [
     {
@@ -46,6 +70,35 @@ function ScheduleTable({ schedules, handleCancelSchedule }) {
       align: 'center'
     },
     {
+      title: "Chức vụ",
+      dataIndex: "position",
+      align: "center",
+      key: "position",
+      render: (position) => {
+        let color;
+        switch (position) {
+          case "Admin":
+            color = "red";
+            break;
+          case "Quản lý":
+            color = "blue";
+            break;
+          case "Thu ngân":
+            color = "green";
+            break;
+          case "Pha chế":
+            color = "orange";
+            break;
+          case "Phục vụ":
+            color = "purple";
+            break;
+          default:
+            color = "gray";
+        }
+        return <Tag color={color}>{position}</Tag>;
+      },
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
@@ -74,7 +127,10 @@ function ScheduleTable({ schedules, handleCancelSchedule }) {
       key: 'action',
       render: (_, record) =>
         record.status === 'Chờ duyệt' ? (
-          <Button danger onClick={() => handleCancelSchedule(record._id)}>
+          <Button 
+            danger 
+            onClick={() => handleRefuseSchedule(record)}
+          >
             Hủy
           </Button>
         ) : null,

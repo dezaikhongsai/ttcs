@@ -17,6 +17,9 @@ const assignmentSchema = new mongoose.Schema({
     timeStart: { type: String, required: true },
     timeEnd : {type : String , required: true}
   },
+  position: {
+    type: String,
+  },
   status: {
     type: String,
     enum: ['Chờ duyệt', 'Đã duyệt', 'Hủy'], 
