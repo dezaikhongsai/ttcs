@@ -39,16 +39,32 @@ const ShiftRegistration = () => {
     }
   }, [isModalVisible]);
 
-  useEffect(() => {
-    if (!isCalendarView) {
-      const fectchAssignment = async () => {
+ useEffect(() => {
+  if (!isCalendarView) {
+    const fetchAssignment = async () => {
+      try {
         const res = await getAssignmentInRole(employee.position, employee._id);
-        setAssignments(res)
+
+        if (res && Array.isArray(res.data)) {
+          setAssignments(res.data);
+        } else {
+          console.warn('Dữ liệu trả về không hợp lệ:', res);
+          setAssignments([]);
+        }
+      } catch (error) {
+        console.error('Lỗi khi fetch assignment:', error);
+        setAssignments([]);
       }
-      fectchAssignment();
-      console.log('Assignments:', res)
-    }
-  }, [trigger , isCalendarView])
+    };
+
+    fetchAssignment();
+  }
+}, [trigger, isCalendarView, employee.position, employee._id]);
+
+  useEffect(() => {
+    console.log('Cập nhật assignments:', assignments);
+  }, [assignments]);
+
 const handleOk = async () => {
   try {
     const values = await form.validateFields(); 
@@ -132,7 +148,7 @@ const handleOk = async () => {
           dateCellRender={dateCellRender}
         />
       ) : (
-        <ScheduleTable  schedules={Array.isArray(assignments) ? assignments : []} handleCancelSchedule={handleCancelSchedule} />
+        <ScheduleTable schedules={assignments} handleCancelSchedule={handleCancelSchedule} />
       )}
     </div>
   );
