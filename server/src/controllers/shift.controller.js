@@ -1,10 +1,4 @@
-import { getShifts, createShift, addEmployeesToShift, getShiftsByMonthYear} from '../services/shift.service.js';
-
-/**
- * Lấy danh sách ca làm
- * @param {Object} req - Yêu cầu từ client
- * @param {Object} res - Phản hồi tới client
- */
+import { getShifts, createShift, addEmployeesToShift, getShiftsByMonthYear , deleteShift} from '../services/shift.service.js';
 export const getShiftsController = async (req, res) => {
   try {
     const shifts = await getShifts();
@@ -18,12 +12,6 @@ export const getShiftsController = async (req, res) => {
     });
   }
 };
-
-/**
- * Tạo ca làm mới
- * @param {Object} req - Yêu cầu từ client
- * @param {Object} res - Phản hồi tới client
- */
 export const createShiftController = async (req, res) => {
   try {
     const shiftData = req.body; // Lấy dữ liệu ca làm từ body
@@ -41,19 +29,43 @@ export const createShiftController = async (req, res) => {
 
 export const addEmployeesToShiftController = async (req, res) => {
   try {
-    const { shiftId } = req.params; // Lấy shiftId từ params
-    const { employeeIds } = req.body; // Lấy danh sách employeeIds từ body
+    const { day, workScheduleId, employeeIds } = req.body;
+
+    // Validate dữ liệu đầu vào
+    if (!day || !workScheduleId || !employeeIds) {
+      return res.status(400).json({
+        message: 'Vui lòng cung cấp đầy đủ thông tin: ngày, ca làm việc và danh sách nhân viên'
+      });
+    }
+
+    // Validate employeeIds phải là mảng
+    if (!Array.isArray(employeeIds)) {
+      return res.status(400).json({
+        message: 'Danh sách nhân viên phải là một mảng'
+      });
+    }
 
     // Gọi service để thêm nhân viên vào ca làm
-    const updatedShift = await addEmployeesToShift(shiftId, employeeIds);
+    const updatedShift = await addEmployeesToShift(day, workScheduleId, employeeIds);
 
     res.status(200).json({
       message: 'Thêm nhân viên vào ca làm thành công!',
-      data: updatedShift,
+      data: updatedShift
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message || 'Không thể thêm nhân viên vào ca làm!',
+    // Xử lý các loại lỗi khác nhau
+    if (error.message.includes('Không tìm thấy')) {
+      return res.status(404).json({
+        message: error.message
+      });
+    }
+    if (error.message.includes('không hợp lệ')) {
+      return res.status(400).json({
+        message: error.message
+      });
+    }
+    res.status(500).json({
+      message: error.message || 'Không thể thêm nhân viên vào ca làm!'
     });
   }
 };
@@ -87,3 +99,10 @@ export const getShiftsByMonthYearController = async (req, res) => {
     });
   }
 };
+
+export const deleteShiftController = async (req, res) => {
+  const { shiftId } = req.params;
+  await deleteShift(shiftId);
+  res.status(200).json({ message: 'Ca làm đã được xóa thành công!' });
+};
+

@@ -14,12 +14,6 @@ const ShiftRegistration = () => {
   const [assignments, setAssignments] = useState([]);
   const [trigger , setTrigger] = useState(false)
   const employee = useSelector((state) => state.auth.user?.employeeId);
-  const [columns, setColumns] = useState({
-    day : '',
-    employee: '',
-    workSchedule: '',
-    status:''
-  })
   useEffect(() => {
     if (isModalVisible) {
       const fetchWorkSchedule = async () => {
@@ -111,7 +105,6 @@ const handleOk = async () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Quản lý lịch làm việc</h2>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <Button

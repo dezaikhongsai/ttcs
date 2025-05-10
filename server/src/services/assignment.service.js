@@ -1,13 +1,42 @@
 import Assignment from '../models/assignment.model.js';
 import Employee from '../models/employee.model.js';
 import WorkSchedule from '../models/workShcedule.js';
+
+const ALLOWED_POSITIONS = {
+  'Pha chế': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Quản lý': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Admin': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Phục vụ': ['Phục vụ'],
+  'Thu ngân': ['Thu ngân']
+};
+
 export const createAssignment = async (assignmentData) => {
-  const { employee, workSchedule , status , day , position} = assignmentData;
+  const { employee, workSchedule, status, day, position } = assignmentData;
+  
+  // Kiểm tra nhân viên và ca làm
   const employeeData = await Employee.findById(employee._id, 'name position');
-  const workScheduleData = await WorkSchedule.findById (workSchedule._id)
+  const workScheduleData = await WorkSchedule.findById(workSchedule._id);
+  
   if (!employeeData || !workScheduleData) {
-    throw new Error('Nhân viên, Ca làm không tồn tại !');
+    throw new Error('Nhân viên hoặc ca làm không tồn tại!');
   }
+
+  // Kiểm tra vị trí có phù hợp với chức vụ không
+  const allowedPositions = ALLOWED_POSITIONS[employeeData.position];
+  if (!allowedPositions || !allowedPositions.includes(position)) {
+    throw new Error(`Nhân viên với chức vụ ${employeeData.position} không thể đăng ký vị trí ${position}`);
+  }
+
+  // Kiểm tra trùng lịch
+  const existingAssignment = await Assignment.findOne({
+    'employee._id': employee._id,
+    day: day,
+  });
+
+  if (existingAssignment) {
+    throw new Error('Nhân viên đã có lịch làm việc trong ngày này!');
+  }
+
   const newAssignment = new Assignment({
     day,
     employee: {
@@ -29,7 +58,6 @@ export const createAssignment = async (assignmentData) => {
   await newAssignment.save();
   return newAssignment;
 };
-
 
 export const getAllAssignments = async () => {
   return await Assignment.find();

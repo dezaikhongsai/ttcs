@@ -1,33 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Button, Tag, message, Modal } from 'antd';
-import { deleteAssignment } from '../services/assignment.service';
+import { Button, Tag, Table, Space } from 'antd';
 import dayjs from 'dayjs';
 
-function ScheduleTable({ schedules, onScheduleChange, trigger }) {
-  useEffect(() => {
-    console.log("schedules", schedules);
-  }, [schedules]);
+const ScheduleTable = ({ assignments = [] }) => {
+  const handleApproveSchedule = (record) => {
+    // Xử lý logic duyệt lịch làm việc
+    console.log('Duyệt lịch:', record);
+  };
 
-  const handleRefuseSchedule = (record) => {
-    Modal.confirm({
-      title: 'Xác nhận hủy ca',
-      content: `Bạn có chắc chắn muốn hủy ca làm việc của ${record.employee?.name || 'nhân viên'} vào ngày ${dayjs(record.day).format('DD/MM/YYYY')}?`,
-      okText: 'Xác nhận',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await deleteAssignment(record._id);
-          message.success('Hủy ca thành công!');
-          if (onScheduleChange) {
-            onScheduleChange();
-          }
-        } catch (error) {
-          message.error('Không thể hủy ca làm việc');
-          console.error('Error refusing schedule:', error);
-        }
-      },
-    });
+  const handleCancelSchedule = (record) => {
+    // Xử lý logic hủy lịch làm việc
+    console.log('Hủy lịch:', record);
+  };
+
+  const handleEditSchedule = (record) => {
+    // Xử lý logic chỉnh sửa lịch làm việc
+    console.log('Chỉnh sửa lịch:', record);
   };
 
   const columns = [
@@ -126,31 +113,44 @@ function ScheduleTable({ schedules, onScheduleChange, trigger }) {
     {
       title: 'Thao tác',
       key: 'action',
-      render: (_, record) =>
-        record.status === 'Chờ duyệt' ? (
+      render: (_, record) => (
+        <Space>
+          {record.status === 'Chờ duyệt' && (
+            <Button 
+              type="primary"
+              onClick={() => handleApproveSchedule(record)}
+            >
+              Duyệt
+            </Button>
+          )}
           <Button 
             danger 
-            onClick={() => handleRefuseSchedule(record)}
+            onClick={() => handleCancelSchedule(record)}
           >
             Hủy
           </Button>
-        ) : null,
-      width: 200,
+          <Button 
+            type="default"
+            onClick={() => handleEditSchedule(record)}
+          >
+            Chỉnh sửa
+          </Button>
+        </Space>
+      ),
+      width: 250,
       align: 'center'
     },
   ];
 
   return (
-    <>
-      <Table 
-        columns={columns} 
-        dataSource={schedules} 
-        rowKey="_id" 
-        pagination={false}
-        scroll={{ x: 'max-content' }}
-      />
-    </>
+    <Table
+      columns={columns}
+      dataSource={assignments}
+      rowKey="_id"
+      pagination={false}
+      scroll={{ x: 'max-content' }}
+    />
   );
-}
+};
 
 export default ScheduleTable;

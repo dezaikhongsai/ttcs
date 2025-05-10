@@ -1,69 +1,142 @@
 import Shift from '../models/shift.model.js';
-import Employee from '../models/employee.model.js';
+import mongoose from 'mongoose';
 
 export const getShifts = async () => {
   const shifts = await Shift.find()
     .populate({
-      path: 'employees', 
-      select: 'name position', 
+      path: 'shifts.workSchedule',
+      select: 'key workSchedule timeStart timeEnd'
+    })
+    .populate({
+      path: 'shifts.employees',
+      select: 'name position'
     });
   return shifts;
 };
 
 export const createShift = async (shiftData) => {
-  const { shiftName, day, employees } = shiftData;
-
-  // Kiểm tra danh sách nhân viên có hợp lệ không
-  const validEmployees = await Employee.find({ _id: { $in: employees } });
-  if (validEmployees.length !== employees.length) {
-    throw new Error('Một hoặc nhiều nhân viên không tồn tại.');
+  const { day, workScheduleId, employeeIds } = shiftData;
+  // Validate workScheduleId
+  if (!mongoose.Types.ObjectId.isValid(workScheduleId)) {
+    throw new Error('ID của ca làm việc không hợp lệ');
   }
-
-  const newShift = new Shift({
-    shiftName,
-    day,
-    employees, 
-  });
-
-  await newShift.save();
-  return await newShift.populate({
-    path: 'employees',
-    select: 'name position',
-  });
-};
-
-export const addEmployeesToShift = async (shiftId, employeeIds) => {
-  const shift = await Shift.findById(shiftId);
+  // Validate employeeIds
+  if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+    throw new Error('Danh sách nhân viên không hợp lệ');
+  }
+  // Validate each employee ID
+  const validEmployeeIds = employeeIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+  if (validEmployeeIds.length !== employeeIds.length) {
+    throw new Error('Một hoặc nhiều ID nhân viên không hợp lệ');
+  }
+  // Kiểm tra xem đã có ca làm cho ngày này chưa
+  let shift = await Shift.findOne({ day });
   if (!shift) {
-    throw new Error('Ca làm không tồn tại.');
+    // Nếu chưa có, tạo mới
+    shift = new Shift({
+      day,
+      shifts: [{
+        workSchedule: workScheduleId,
+        employees: validEmployeeIds
+      }]
+    });
+  } else {
+    // Kiểm tra xem workSchedule đã tồn tại trong ngày chưa
+    const existingWorkSchedule = shift.shifts.find(
+      s => s.workSchedule.toString() === workScheduleId
+    );
+    if (existingWorkSchedule) {
+      throw new Error('Ca làm việc này đã tồn tại trong ngày');
+    }
+    shift.shifts.push({
+      workSchedule: workScheduleId,
+      employees: validEmployeeIds
+    });
   }
-
-  const validEmployees = await Employee.find({ _id: { $in: employeeIds } });
-  if (validEmployees.length !== employeeIds.length) {
-    throw new Error('Một hoặc nhiều nhân viên không tồn tại.');
-  }
-
-  const newEmployees = validEmployees.map((emp) => emp._id);
-
-  shift.employees = [...new Set([...shift.employees, ...newEmployees])];
-
   await shift.save();
-
-  return await shift.populate({
-    path: 'employees',
-    select: 'name position', 
-  });
+  return await Shift.findById(shift._id)
+    .populate({
+      path: 'shifts.workSchedule',
+      select: 'key workSchedule timeStart timeEnd'
+    })
+    .populate({
+      path: 'shifts.employees',
+      select: 'name position'
+    });
 };
 
 export const getShiftsByMonthYear = async (month, year) => {
-  const startDate = new Date(year, month - 1, 1); 
+  const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
+  
   const shifts = await Shift.find({
-    day: { $gte: startDate, $lte: endDate },
-  }).populate({
-    path: 'employees',
-    select: 'name position', 
+    day: { $gte: startDate, $lte: endDate }
+  })
+  .populate({
+    path: 'shifts.workSchedule',
+    select: 'key workSchedule timeStart timeEnd'
+  })
+  .populate({
+    path: 'shifts.employees',
+    select: 'name position'
   });
 
   return shifts;
 };
+
+export const addEmployeesToShift = async (day, workScheduleId, employeeIds) => {
+  // Validate workScheduleId
+  if (!mongoose.Types.ObjectId.isValid(workScheduleId)) {
+    throw new Error('ID của ca làm việc không hợp lệ');
+  }
+
+  // Validate employeeIds
+  if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+    throw new Error('Danh sách nhân viên không hợp lệ');
+  }
+
+  // Validate each employee ID
+  const validEmployeeIds = employeeIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+  if (validEmployeeIds.length !== employeeIds.length) {
+    throw new Error('Một hoặc nhiều ID nhân viên không hợp lệ');
+  }
+
+  // Tìm ca làm theo ngày
+  const shift = await Shift.findOne({ day });
+  if (!shift) {
+    throw new Error('Không tìm thấy ca làm cho ngày này');
+  }
+
+  // Tìm ca làm cụ thể theo workScheduleId
+  const workShift = shift.shifts.find(
+    s => s.workSchedule.toString() === workScheduleId
+  );
+  if (!workShift) {
+    throw new Error('Không tìm thấy ca làm việc này trong ngày');
+  }
+
+  // Thêm nhân viên mới vào ca làm, sử dụng Set để tránh trùng lặp
+  workShift.employees = [...new Set([...workShift.employees, ...validEmployeeIds])];
+  
+  await shift.save();
+  
+  return await Shift.findById(shift._id)
+    .populate({
+      path: 'shifts.workSchedule',
+      select: 'key workSchedule timeStart timeEnd'
+    })
+    .populate({
+      path: 'shifts.employees',
+      select: 'name position'
+    });
+};
+
+export const deleteShift = async (shiftId) => {
+  const shift = await Shift.findById(shiftId);
+  if (!shift) {
+    throw new Error('Không tìm thấy ca làm');
+  }
+  await shift.deleteOne();
+};
+
+  
