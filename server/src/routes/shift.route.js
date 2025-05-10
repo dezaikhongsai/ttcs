@@ -1,5 +1,5 @@
 import express from 'express';
-import { createShiftController, addEmployeesToShiftController , getShiftsByMonthYearController, getShiftsController , deleteShiftController} from '../controllers/shift.controller.js';
+import { createShiftController , getShiftsByMonthYearController, getShiftsController , deleteShiftController} from '../controllers/shift.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -15,7 +15,7 @@ router.get('/shifts/by-month-year', getShiftsByMonthYearController);
 router.post('/shifts', createShiftController);
 
 // Thêm nhân viên vào ca làm
-router.post('/shifts/add-employees', addEmployeesToShiftController);
+// router.post('/shifts/add-employees', addEmployeesToShiftController);
 
 // Xóa ca làm
 router.delete('/shifts/:shiftId', deleteShiftController);

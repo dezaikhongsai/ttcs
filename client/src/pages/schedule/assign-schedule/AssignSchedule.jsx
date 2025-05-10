@@ -12,8 +12,10 @@ const ShiftRegistration = () => {
   const [isCalendarView, setIsCalendarView] = useState(true);
   const [workSchedule, setWorkSchedule] = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [trigger , setTrigger] = useState(false)
+  const [trigger, setTrigger] = useState(false);
+  const [loading, setLoading] = useState(false);
   const employee = useSelector((state) => state.auth.user?.employeeId);
+
   useEffect(() => {
     if (isModalVisible) {
       const fetchWorkSchedule = async () => {
@@ -33,52 +35,57 @@ const ShiftRegistration = () => {
     }
   }, [isModalVisible]);
 
- useEffect(() => {
-  if (!isCalendarView) {
-    const fetchAssignment = async () => {
-      try {
-        const res = await getAssignmentInRole(employee.position, employee._id);
+  useEffect(() => {
+    if (!isCalendarView) {
+      const fetchAssignment = async () => {
+        setLoading(true);
+        try {
+          const res = await getAssignmentInRole(employee.position, employee._id);
 
-        if (res && Array.isArray(res.data)) {
-          setAssignments(res.data);
-        } else {
-          console.warn('Dữ liệu trả về không hợp lệ:', res);
+          if (res && Array.isArray(res.data)) {
+            setAssignments(res.data);
+          } else {
+            console.warn('Dữ liệu trả về không hợp lệ:', res);
+            setAssignments([]);
+          }
+        } catch (error) {
+          console.error('Lỗi khi fetch assignment:', error);
           setAssignments([]);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Lỗi khi fetch assignment:', error);
-        setAssignments([]);
-      }
-    };
+      };
 
-    fetchAssignment();
-  }
-}, [trigger, isCalendarView, employee.position, employee._id]);
+      fetchAssignment();
+    }
+  }, [trigger, isCalendarView, employee.position, employee._id]);
 
   useEffect(() => {
     console.log('Cập nhật assignments:', assignments);
   }, [assignments]);
 
-const handleOk = async () => {
-  try {
-    const values = await form.validateFields(); 
-    const assignmentData = {
-      employee: {_id : employee._id}, 
-      day: selectedDate.format('YYYY-MM-DD'), // định dạng ngày
-      workSchedule: {_id : values.workSchedule}, // giá trị key từ dropdown
-      position: values.position,
-    };
+  const handleOk = async () => {
+    setLoading(true);
+    try {
+      const values = await form.validateFields(); 
+      const assignmentData = {
+        employee: {_id : employee._id}, 
+        day: selectedDate.format('YYYY-MM-DD'),
+        workSchedule: {_id : values.workSchedule},
+        position: values.position,
+      };
 
-    await addAssignment(assignmentData);
-    message.success('Đăng ký ca làm thành công!');
-    setIsModalVisible(false);
-    form.resetFields(); // reset form khi đăng ký xong
-  } catch (error) {
-    message.error(error.message || 'Đăng ký ca làm thất bại!');
-  }
-  setTrigger(!trigger);
-};
-
+      await addAssignment(assignmentData);
+      message.success('Đăng ký ca làm thành công!');
+      setIsModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error(error.message || 'Đăng ký ca làm thất bại!');
+    } finally {
+      setLoading(false);
+      setTrigger(!trigger);
+    }
+  };
 
   const handleCancel = () => {
     form.resetFields();
@@ -135,7 +142,7 @@ const handleOk = async () => {
           dateCellRender={dateCellRender}
         />
       ) : (
-        <ScheduleTable schedules={assignments} onScheduleChange={() => setTrigger(!trigger)} trigger={trigger} />
+        <ScheduleTable schedules={assignments} onScheduleChange={() => setTrigger(!trigger)} trigger={trigger} loading={loading} />
       )}
     </div>
   );

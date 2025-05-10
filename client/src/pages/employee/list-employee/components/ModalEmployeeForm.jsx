@@ -22,42 +22,49 @@ const ModalEmployeeForm = ({
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (mode === 2 && employeeData) {
-      // Nếu là chế độ sửa, điền dữ liệu vào form
-      form.setFieldsValue({
-        ...employeeData,
-        dob: employeeData.dob ? moment(employeeData.dob) : null, // Chuyển ngày sinh thành moment
-      });
-    } else {
-      form.resetFields(); // Reset form nếu là chế độ thêm
+    if (visible) {
+      if (mode === 2 && employeeData) {
+        // Nếu là chế độ sửa, điền dữ liệu vào form
+        form.setFieldsValue({
+          ...employeeData,
+          dob: employeeData.dob ? moment(employeeData.dob) : null, // Chuyển ngày sinh thành moment
+        });
+      } else {
+        form.resetFields(); // Reset form nếu là chế độ thêm
+      }
     }
-  }, [mode, employeeData, form]);
+  }, [visible, mode, employeeData, form]);
 
-  const handleOk = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        form.resetFields(); // Reset form sau khi submit
-        onSubmit(values); // Gửi dữ liệu lên cha
-      })
-      .catch((info) => {
-        message.error("Vui lòng kiểm tra lại các trường nhập liệu!");
-      });
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      onSubmit(values);
+      form.resetFields();
+    } catch (error) {
+      message.error("Vui lòng kiểm tra lại các trường nhập liệu!");
+    }
+  };
+
+  const handleCancel = () => {
+    form.resetFields();
+    onClose();
   };
 
   return (
     <Modal
-      title={mode === 1 ? "Thêm nhân viên mới" : `Cập nhật thông tin nhân viên: ${employeeData.name}`}
+      title={mode === 1 ? "Thêm nhân viên mới" : `Cập nhật thông tin nhân viên: ${employeeData?.name}`}
       open={visible}
-      onCancel={() => {
-        form.resetFields(); // Reset form khi đóng modal
-        onClose();
-      }}
+      onCancel={handleCancel}
       onOk={handleOk}
       okText={mode === 1 ? "Thêm" : "Lưu"}
       cancelText="Hủy"
+      destroyOnClose
     >
-      <Form form={form} layout="vertical">
+      <Form 
+        form={form} 
+        layout="vertical"
+        preserve={false}
+      >
         <Form.Item
           label="Họ và tên"
           name="name"
@@ -121,10 +128,8 @@ const ModalEmployeeForm = ({
             placeholder="Nhập lương theo giờ"
             style={{ width: "100%" }}
             min={0}
-            formatter={
-              (value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") // Thêm dấu phẩy
-            }
-            parser={(value) => value.replace(/\$\s?|(,*)/g, "")} // Loại bỏ dấu phẩy khi lưu
+            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+            parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
           />
         </Form.Item>
       </Form>

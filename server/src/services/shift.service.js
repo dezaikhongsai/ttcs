@@ -16,21 +16,26 @@ export const getShifts = async () => {
 
 export const createShift = async (shiftData) => {
   const { day, workScheduleId, employeeIds } = shiftData;
+  
   // Validate workScheduleId
   if (!mongoose.Types.ObjectId.isValid(workScheduleId)) {
     throw new Error('ID của ca làm việc không hợp lệ');
   }
+
   // Validate employeeIds
   if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
     throw new Error('Danh sách nhân viên không hợp lệ');
   }
+
   // Validate each employee ID
   const validEmployeeIds = employeeIds.filter(id => mongoose.Types.ObjectId.isValid(id));
   if (validEmployeeIds.length !== employeeIds.length) {
     throw new Error('Một hoặc nhiều ID nhân viên không hợp lệ');
   }
+
   // Kiểm tra xem đã có ca làm cho ngày này chưa
   let shift = await Shift.findOne({ day });
+  
   if (!shift) {
     // Nếu chưa có, tạo mới
     shift = new Shift({
@@ -45,15 +50,32 @@ export const createShift = async (shiftData) => {
     const existingWorkSchedule = shift.shifts.find(
       s => s.workSchedule.toString() === workScheduleId
     );
+
     if (existingWorkSchedule) {
-      throw new Error('Ca làm việc này đã tồn tại trong ngày');
+      // Kiểm tra nhân viên trùng lặp trong ca làm
+      const duplicateEmployees = validEmployeeIds.filter(employeeId => 
+        existingWorkSchedule.employees.some(existingId => 
+          existingId.toString() === employeeId.toString()
+        )
+      );
+
+      if (duplicateEmployees.length > 0) {
+        throw new Error('Một hoặc nhiều nhân viên đã được phân công vào ca làm này');
+      }
+
+      // Nếu ca làm đã tồn tại và không có nhân viên trùng, thêm nhân viên mới vào
+      existingWorkSchedule.employees = [...existingWorkSchedule.employees, ...validEmployeeIds];
+    } else {
+      // Nếu ca làm chưa tồn tại, thêm ca làm mới
+      shift.shifts.push({
+        workSchedule: workScheduleId,
+        employees: validEmployeeIds
+      });
     }
-    shift.shifts.push({
-      workSchedule: workScheduleId,
-      employees: validEmployeeIds
-    });
   }
+
   await shift.save();
+  
   return await Shift.findById(shift._id)
     .populate({
       path: 'shifts.workSchedule',

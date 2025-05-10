@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, message } from 'antd';
+import { Spin, message } from 'antd';
 import { getAssignments } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
 
@@ -25,7 +25,7 @@ const SetSchedule = () => {
   }, []);
 
   return (
-    <Card title="Lịch làm việc">
+    <div className="p-4">
       <Spin spinning={loading}>
         {error ? (
           <div style={{ color: 'red' }}>{error}</div>
@@ -33,7 +33,7 @@ const SetSchedule = () => {
           <ScheduleTable assignments={assignments} />
         )}
       </Spin>
-    </Card>
+    </div>
   );
 };
 
