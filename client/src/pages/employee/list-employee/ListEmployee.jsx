@@ -32,7 +32,7 @@ const EmployeeTable = () => {
   const [isEmployeeFormVisible, setIsEmployeeFormVisible] = useState(false);
   const [employeeFormMode, setEmployeeFormMode] = useState(1);
   const [editingEmployee, setEditingEmployee] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' hoặc 'statistics'
+  const [viewMode, setViewMode] = useState('list'); 
 
   const fetchEmployees = async (page = 1, pageSize = 10, filters = {}, sortBy = "name", sortOrder = "asc") => {
     setLoading(true);
@@ -89,15 +89,15 @@ const EmployeeTable = () => {
   };
   const debounceSearch = useCallback(
     debounce((value) => {
-      setSearchName(value); // Cập nhật trạng thái tìm kiếm
-      setTrigger(true); // Kích hoạt useEffect để gọi API
-    }, 500), // Trì hoãn 500ms
+      setSearchName(value); 
+      setTrigger(true); 
+    }, 500), 
     []
   );
   
   const handleSearch = (e) => {
-    const value = e.target.value; // Lấy giá trị từ ô tìm kiếm
-    debounceSearch(value); // Gọi hàm debounce
+    const value = e.target.value; 
+    debounceSearch(value); 
   };
 
   const handleCloseEmployeeModal = () => {
@@ -106,38 +106,33 @@ const EmployeeTable = () => {
   };
 
   const handleFilter = () => {
-    setIsFilterModalVisible(true); // Hiển thị modal lọc
+    setIsFilterModalVisible(true); 
   };
   const handleSortChange = (value) => {
-    setSortOrder(value); // Cập nhật trạng thái sắp xếp
-    setTrigger(true); // Kích hoạt useEffect để gọi API
+    setSortOrder(value); 
+    setTrigger(true); 
   };
   
   const handleTableChange = (pagination, filters, sorter) => {
     const { current, pageSize } = pagination;
-  // Cập nhật trạng thái phân trang
     setPagination((prev) => ({
       ...prev,
       current,
       pageSize,
     }));
-  // Cập nhật trạng thái sắp xếp
     if (sorter.field) {
       const sortBy = sorter.field;
       const sortOrder = sorter.order === "ascend" ? "asc" : "desc";
       setSortOrder(sortOrder);
     }
-  // Kích hoạt useEffect để gọi API
     setTrigger(true);
   };
   const handleFilterCancel = () => {
-    setIsFilterModalVisible(false); // Đóng modal lọc
+    setIsFilterModalVisible(false); 
   };
   const handleFilterApply = (values) => {
-    setFilters(values); // Cập nhật bộ lọc
-    setIsFilterModalVisible(false); // Đóng modal lọc
-
-    // Tạo danh sách tag từ các giá trị lọc
+    setFilters(values); 
+    setIsFilterModalVisible(false);         
     const tags = [];
     if (values.gender) {
       tags.push({ key: "gender", label: `Giới tính: ${values.gender}` });
@@ -145,28 +140,27 @@ const EmployeeTable = () => {
     if (values.position) {
       tags.push({ key: "position", label: `Chức vụ: ${values.position}` });
     }
-    setFilterTags(tags); // Cập nhật tag
-    setTrigger(true); // Kích hoạt useEffect để gọi API
+    setFilterTags(tags); 
+    setTrigger(true); 
   };
   
   const handleRemoveTag = (key) => {
     const updatedFilters = { ...filters };
-    delete updatedFilters[key]; // Xóa bộ lọc tương ứng
-    setFilters(updatedFilters); // Cập nhật bộ lọc
-    // Cập nhật danh sách tag
+    delete updatedFilters[key]; 
+    setFilters(updatedFilters); 
     const updatedTags = filterTags.filter((tag) => tag.key !== key);
     setFilterTags(updatedTags);
-    setTrigger(true); // Kích hoạt useEffect để gọi API
+    setTrigger(true); 
   };
   const handleOpenAddEmployeeModal = () => {
-    setEmployeeFormMode(1); // Chế độ thêm
-    setEditingEmployee(null); // Không có dữ liệu chỉnh sửa
+    setEmployeeFormMode(1);
+    setEditingEmployee(null);
     setIsEmployeeFormVisible(true);
   };
 
   const handleOpenEditEmployeeModal = (employee) => {
-    setEmployeeFormMode(2); // Chế độ sửa
-    setEditingEmployee(employee); // Gán dữ liệu nhân viên cần sửa
+    setEmployeeFormMode(2); 
+    setEditingEmployee(employee); 
     setIsEmployeeFormVisible(true);
   };
 
@@ -177,16 +171,14 @@ const EmployeeTable = () => {
   const handleSubmitEmployeeForm = async (employeeData) => {
     try {
       if (employeeFormMode === 1) {
-        // Thêm nhân viên
-        await addEmployee(employeeData); // Hàm `addEmployee` cần được định nghĩa trong `employee.service.js`
+        await addEmployee(employeeData); 
         message.success("Thêm nhân viên thành công!");
       } else {
-        // Sửa nhân viên
-        await updateEmployee(editingEmployee._id, employeeData); // Hàm `updateEmployee` cần được định nghĩa
+        await updateEmployee(editingEmployee._id, employeeData) 
         message.success("Cập nhật thông tin nhân viên thành công!");
       }
-      setTrigger(true); // Kích hoạt useEffect để tải lại danh sách
-      handleCloseEmployeeFormModal(); // Đóng modal
+      setTrigger(true); 
+      handleCloseEmployeeFormModal(); 
     } catch (error) {
       message.error("Không thể xử lý yêu cầu!");
     }

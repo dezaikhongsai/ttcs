@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, Modal, Form, Select, message, Badge } from 'antd';
 import dayjs from 'dayjs';
+
+const ALLOWED_POSITIONS = {
+  'Pha chế': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Quản lý': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Admin': ['Pha chế', 'Phục vụ', 'Thu ngân'],
+  'Phục vụ': ['Phục vụ'],
+  'Thu ngân': ['Thu ngân']
+};
 
 const CalendarView = ({
   isModalVisible,
@@ -12,16 +20,42 @@ const CalendarView = ({
   handleOk,
   handleCancel,
   dateCellRender,
+  currentEmployee,
+  onMonthChange,
 }) => {
+  const [isMonthChanging, setIsMonthChanging] = useState(false);
+
   const handleDateSelect = (value) => {
-    setSelectedDate(value);
-    setIsModalVisible(true);
+    if (!isMonthChanging) {
+      setSelectedDate(value);
+      setIsModalVisible(true);
+    }
+  };
+
+  const handlePanelChange = (date, mode) => {
+    if (mode === 'month' && onMonthChange) {
+      setIsMonthChanging(true);
+      onMonthChange(date);
+      if (isModalVisible) {
+        setIsModalVisible(false);
+      }
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        setIsMonthChanging(false);
+      }, 100);
+    }
+  };
+
+  const getAvailablePositions = () => {
+    if (!currentEmployee) return [];
+    return ALLOWED_POSITIONS[currentEmployee.position] || [];
   };
 
   return (
     <>
       <Calendar
         onSelect={handleDateSelect}
+        onPanelChange={handlePanelChange}
         disabledDate={(current) => current && current < dayjs().startOf('day')}
         cellRender={dateCellRender}
       />
@@ -57,7 +91,7 @@ const CalendarView = ({
               <Select.Option value="Pha chế">Pha chế</Select.Option>
               <Select.Option value="Phục vụ">Phục vụ</Select.Option>
               <Select.Option value="Thu ngân">Thu ngân</Select.Option>
-            </Select>
+            </Select> 
           </Form.Item>
         </Form>
       </Modal>
