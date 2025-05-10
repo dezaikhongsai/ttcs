@@ -9,8 +9,6 @@ const apiClient = axios.create({
     },
     withCredentials: true, 
 });
-
-// Interceptor để thêm token vào heade   r của mỗi request
 apiClient.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
@@ -24,7 +22,6 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-// Interceptor để xử lý lỗi (ví dụ: token hết hạn)
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {

@@ -3,7 +3,7 @@ import { Table, Button, Tag, message, Modal } from 'antd';
 import { deleteAssignment } from '../services/assignment.service';
 import dayjs from 'dayjs';
 
-function ScheduleTable({ schedules, onScheduleChange, trigger }) {
+function ScheduleTable({ schedules, onScheduleChange, trigger, loading }) {
   useEffect(() => {
     console.log("schedules", schedules);
   }, [schedules]);
@@ -148,6 +148,7 @@ function ScheduleTable({ schedules, onScheduleChange, trigger }) {
         rowKey="_id" 
         pagination={false}
         scroll={{ x: 'max-content' }}
+        loading={loading}
       />
     </>
   );

@@ -58,7 +58,6 @@ const ScheduleTable = ({ assignments = [] }) => {
     {
       title: "Chức vụ",
       dataIndex: "position",
-      align: "center",
       key: "position",
       render: (position) => {
         let color;
@@ -90,6 +89,8 @@ const ScheduleTable = ({ assignments = [] }) => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 200,
+      align: 'center',
       render: (text) => {
         let color = '';
         switch (text) {
@@ -107,8 +108,7 @@ const ScheduleTable = ({ assignments = [] }) => {
         }
         return <Tag color={color}>{text}</Tag>;
       },
-      width: 200,
-      align: 'center'
+      
     },
     {
       title: 'Thao tác',
@@ -129,15 +129,9 @@ const ScheduleTable = ({ assignments = [] }) => {
           >
             Hủy
           </Button>
-          <Button 
-            type="default"
-            onClick={() => handleEditSchedule(record)}
-          >
-            Chỉnh sửa
-          </Button>
         </Space>
       ),
-      width: 250,
+      width: 200,
       align: 'center'
     },
   ];
