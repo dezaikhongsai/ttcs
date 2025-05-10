@@ -27,15 +27,28 @@ export const createAssignment = async (assignmentData) => {
     throw new Error(`Nhân viên với chức vụ ${employeeData.position} không thể đăng ký vị trí ${position}`);
   }
 
-  // Kiểm tra trùng lịch
+  // Kiểm tra trùng ca làm trong cùng ngày
   const existingAssignment = await Assignment.findOne({
     'employee._id': employee._id,
     day: day,
+    'workSchedule._id': workSchedule._id
   });
 
   if (existingAssignment) {
-    throw new Error('Nhân viên đã có lịch làm việc trong ngày này!');
+    throw new Error('Nhân viên đã đăng ký ca làm này trong ngày!');
   }
+
+  // Kiểm tra xem nhân viên đã đăng ký bao nhiêu ca trong ngày
+  const assignmentsInDay = await Assignment.countDocuments({
+    'employee._id': employee._id,
+    day: day
+  });
+
+  // Giới hạn số ca làm trong một ngày (ví dụ: tối đa 2 ca)
+  // const MAX_ASSIGNMENTS_PER_DAY = 2;
+  // if (assignmentsInDay >= MAX_ASSIGNMENTS_PER_DAY) {
+  //   throw new Error(`Nhân viên đã đăng ký tối đa ${MAX_ASSIGNMENTS_PER_DAY} ca trong ngày!`);
+  // }
 
   const newAssignment = new Assignment({
     day,

@@ -14,7 +14,7 @@ export const getAssignments = async () => {
 
 export const updateAssignment = async (id, data) => {
     try {
-        const respone = await apiClient.put(`${assignmentApi}/${id}`, data);
+        const respone = await apiClient.put(`${assignmentApi}/status/${id}`, data);
         return respone.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
@@ -24,6 +24,14 @@ export const updateAssignment = async (id, data) => {
 export const createShift = async(data) => {
     try {
         const respone = await apiClient.post(shiftApi, data);
+        return respone.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
+    }
+}
+export const deleteAssignment = async(id) => {
+    try {
+        const respone = await apiClient.delete(`${assignmentApi}/${id}`);
         return respone.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
