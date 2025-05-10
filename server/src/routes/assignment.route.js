@@ -15,6 +15,6 @@ router.get('/', getAllAssignmentsController);
 router.get('/:employeeId', getAssignmentsByEmployeeIdController); 
 router.post('/', createAssignmentController);
 router.delete('/:id', deleteAssignmentController);
-router.put('/:id/status', authorizeRoles(['Admin', 'Manager']), updateAssignmentStatusController);
+router.put('/status/:id', authorizeRoles(['Admin', 'Manager']), updateAssignmentStatusController);
 
 export default router;

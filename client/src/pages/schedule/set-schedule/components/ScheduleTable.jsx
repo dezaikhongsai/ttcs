@@ -1,22 +1,7 @@
 import { Button, Tag, Table, Space } from 'antd';
 import dayjs from 'dayjs';
 
-const ScheduleTable = ({ assignments = [] }) => {
-  const handleApproveSchedule = (record) => {
-    // Xử lý logic duyệt lịch làm việc
-    console.log('Duyệt lịch:', record);
-  };
-
-  const handleCancelSchedule = (record) => {
-    // Xử lý logic hủy lịch làm việc
-    console.log('Hủy lịch:', record);
-  };
-
-  const handleEditSchedule = (record) => {
-    // Xử lý logic chỉnh sửa lịch làm việc
-    console.log('Chỉnh sửa lịch:', record);
-  };
-
+const ScheduleTable = ({ assignments = [], handleApproveSchedule, handleCancelSchedule, loading }) => {
   const columns = [
     {
       title: 'STT',
@@ -143,6 +128,7 @@ const ScheduleTable = ({ assignments = [] }) => {
       rowKey="_id"
       pagination={false}
       scroll={{ x: 'max-content' }}
+      loading={loading}
     />
   );
 };
