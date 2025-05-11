@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Spin, message } from 'antd';
-import { getAssignments , createShift , updateAssignment , deleteAssignment } from './services/schedule.service';
+import { Spin, message, Button, Space } from 'antd';
+import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
+import ListShift from './components/ListShift';
 
 const SetSchedule = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [activeView, setActiveView] = useState('schedule'); // 'schedule' or 'shift'
+  const [shifts, setShifts] = useState([]);
   const fetchAssignment = async () => {
     try {
       setLoading(true);
@@ -21,8 +23,24 @@ const SetSchedule = () => {
     }
   };
 
+  const fetchShifts = async () => {
+    try {
+      setLoading(true);
+      const response = await getShifts();
+      console.log("API Response:", response);
+      setShifts(response.data || []);
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      setError(error.message);
+      message.error('Không thể lấy dữ liệu ca làm');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchAssignment();
+    fetchShifts();
   }, []);
   
   const handleApproveSchedule = async (record) => {
@@ -38,6 +56,7 @@ const SetSchedule = () => {
       message.success('Duyệt lịch thành công');
       // Cập nhật lại danh sách assignments
       await fetchAssignment();
+      await fetchShifts();
     } catch (error) {
       message.error('Lỗi: ' + error.message);
     } finally {
@@ -59,11 +78,35 @@ const SetSchedule = () => {
   }
   return (
     <div className="p-4">
+      <Space style={{ marginBottom: 16 }}>
+        <Button 
+          type={activeView === 'schedule' ? 'primary' : 'default'}
+          onClick={() => setActiveView('schedule')}
+        >
+          Quản lý đăng ký ca làm
+        </Button>
+        <Button 
+          type={activeView === 'shift' ? 'primary' : 'default'}
+          onClick={() => setActiveView('shift')}
+        >
+          Danh sách lịch làm
+        </Button>
+      </Space>
+
       <Spin spinning={loading}>
         {error ? (
           <div style={{ color: 'red' }}>{error}</div>
         ) : (
-          <ScheduleTable assignments={assignments} handleApproveSchedule={handleApproveSchedule} handleCancelSchedule={handleCancelSchedule} loading = {loading} />
+          activeView === 'schedule' ? (
+            <ScheduleTable 
+              assignments={assignments} 
+              handleApproveSchedule={handleApproveSchedule} 
+              handleCancelSchedule={handleCancelSchedule} 
+              loading={loading} 
+            />
+          ) : (
+            <ListShift data={shifts} loading={loading} />
+          )
         )}
       </Spin>
     </div>

@@ -1,4 +1,4 @@
-import { Button, Tag, Table, Space } from 'antd';
+import { Button, Tag, Table, Space, Modal } from 'antd';
 import dayjs from 'dayjs';
 
 const ScheduleTable = ({ assignments = [], handleApproveSchedule, handleCancelSchedule, loading }) => {
@@ -110,7 +110,15 @@ const ScheduleTable = ({ assignments = [], handleApproveSchedule, handleCancelSc
           )}
           <Button 
             danger 
-            onClick={() => handleCancelSchedule(record)}
+            onClick={() => {
+              Modal.confirm({
+                title: 'Xác nhận hủy',
+                content: `Bạn có chắc chắn muốn hủy lịch làm việc của ${record.employee.name} vào ngày ${dayjs(record.day).format('DD/MM/YYYY')}?`,
+                okText: 'Xác nhận',
+                cancelText: 'Hủy',
+                onOk: () => handleCancelSchedule(record)
+              });
+            }}
           >
             Hủy
           </Button>
