@@ -71,7 +71,6 @@ function ScheduleTable({ schedules, onScheduleChange, trigger, loading }) {
     {
       title: "Chức vụ",
       dataIndex: "position",
-      align: "center",
       key: "position",
       render: (position) => {
         let color;

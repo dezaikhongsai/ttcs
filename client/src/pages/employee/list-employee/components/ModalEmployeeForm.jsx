@@ -21,19 +21,24 @@ const ModalEmployeeForm = ({
 }) => {
   const [form] = Form.useForm();
 
+  // Khi visible hoặc mode thay đổi → reset form
   useEffect(() => {
-    if (visible) {
-      if (mode === 2 && employeeData) {
-        // Nếu là chế độ sửa, điền dữ liệu vào form
-        form.setFieldsValue({
-          ...employeeData,
-          dob: employeeData.dob ? moment(employeeData.dob) : null, // Chuyển ngày sinh thành moment
-        });
-      } else {
-        form.resetFields(); // Reset form nếu là chế độ thêm
-      }
+    if (visible && mode === 1) {
+      form.resetFields();
     }
-  }, [visible, mode, employeeData, form]);
+  }, [visible, mode]);
+
+  // Khi có employeeData → set lại dữ liệu form
+  useEffect(() => {
+    if (visible && mode === 2 && employeeData) {
+      form.setFieldsValue({
+        ...employeeData,
+        dob: employeeData.dob ? moment(employeeData.dob) : null,
+      });
+    }
+    console.log("data :" , employeeData)
+  }, [employeeData, visible, mode, form]);
+
 
   const handleOk = async () => {
     try {
@@ -59,6 +64,7 @@ const ModalEmployeeForm = ({
       okText={mode === 1 ? "Thêm" : "Lưu"}
       cancelText="Hủy"
       destroyOnClose
+      forceRender 
     >
       <Form 
         form={form} 

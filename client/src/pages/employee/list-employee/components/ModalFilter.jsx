@@ -1,4 +1,3 @@
-import React from "react";
 import { Modal, Form, Select } from "antd";
 
 const { Option } = Select;
@@ -14,8 +13,8 @@ const ModalFilter = ({ visible, onCancel, onApply }) => {
       open={visible}
       onCancel={onCancel}
       onOk={handleOk}
-      okText="Lọc" // Đổi nút OK thành "Lọc"
-      cancelText="Hủy" // Đổi nút Cancel thành "Hủy"
+      okText="Lọc" 
+      cancelText="Hủy" 
     >
       <Form id="filter-form" onFinish={onApply} layout="vertical">
         <Form.Item label="Giới tính" name="gender">
