@@ -122,7 +122,13 @@ const SetSchedule = () => {
           ) : shiftViewMode === 'calendar' ? (
             <ListShift data={shifts} loading={loading} />
           ) : (
-            <ShiftTable data={shifts} loading={loading} />
+            <ShiftTable
+            data={shifts}
+            loading={loading}
+            onView={(record) => console.log('Xem:', record)}
+            onEdit={(record) => console.log('Sửa:', record)}
+            onDelete={(record) => console.log('Xóa:', record)}
+          />
           )
         )}
       </Spin>
