@@ -7,7 +7,6 @@ import ModalEmployee from "./components/ModalEmployee";
 import debounce from "lodash.debounce";
 import ModalEmployeeForm from "./components/ModalEmployeeForm";
 import QuickStatistics from "./components/EmployeeStatistic.jsx";
-
 const EmployeeTable = () => {
   const { Option } = Select;
   const [employees, setEmployees] = useState([]);
@@ -159,10 +158,16 @@ const EmployeeTable = () => {
   };
 
   const handleOpenEditEmployeeModal = (employee) => {
-    setEmployeeFormMode(2); 
-    setEditingEmployee(employee); 
+    setEmployeeFormMode(2);
+    setEditingEmployee(employee);
+    setSelectedEmployee(employee);
     setIsEmployeeFormVisible(true);
   };
+  useEffect(() => {
+  if (employeeFormMode === 2 && editingEmployee) {
+    setIsEmployeeFormVisible(true);
+  }
+}, [employeeFormMode, editingEmployee]);
 
   const handleCloseEmployeeFormModal = () => {
     setIsEmployeeFormVisible(false);
@@ -296,7 +301,7 @@ const EmployeeTable = () => {
               cursor: "pointer",
               transition: "background-color 0.3s ease",
             }}
-              onClick={() => handleOpenEditEmployeeModal(record)}
+              onClick={() => {handleOpenEditEmployeeModal(record) ; console.log("Chỉnh sửa : " , record)}}
             >
             Sửa
           </Button>
@@ -413,12 +418,12 @@ const EmployeeTable = () => {
         employee={selectedEmployee}
       />
       <ModalEmployeeForm
-        visible={isEmployeeFormVisible}
-        onClose={handleCloseEmployeeFormModal}
-        onSubmit={handleSubmitEmployeeForm}
-        mode={employeeFormMode}
-        employeeData={editingEmployee}
-      />
+      visible={isEmployeeFormVisible}
+      onClose={handleCloseEmployeeFormModal}
+      onSubmit={handleSubmitEmployeeForm}
+      mode={employeeFormMode}
+      employeeData={selectedEmployee }
+    />
     </div>
   );
 };
