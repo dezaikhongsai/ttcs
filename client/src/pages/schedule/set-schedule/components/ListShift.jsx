@@ -6,6 +6,9 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import vi from 'date-fns/locale/vi';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Spin, Typography } from 'antd';
+
+const { Title } = Typography;
 
 const locales = {
   'vi': vi,
@@ -20,8 +23,21 @@ const localizer = dateFnsLocalizer({
 });
 
 const ListShift = ({ data, loading }) => {
-  if (loading) return <div>Loading...</div>;
-  if (!data || data.length === 0) return <div>Không có dữ liệu ca làm việc</div>;
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: 32 }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-4">
+        <Title level={4}>Không có dữ liệu ca làm việc</Title>
+      </div>
+    );
+  }
 
   // Chuyển đổi data sang dạng event cho calendar
   const events = [];
@@ -44,12 +60,11 @@ const ListShift = ({ data, loading }) => {
         startAccessor="start"
         endAccessor="end"
         defaultView="week"
-        views={['week', 'day', 'agenda']}
+        views={['week', 'day']}
         culture="vi"
         messages={{
           week: 'Tuần',
           day: 'Ngày',
-          agenda: 'Danh sách',
           today: 'Hôm nay',
           previous: 'Trước',
           next: 'Sau',

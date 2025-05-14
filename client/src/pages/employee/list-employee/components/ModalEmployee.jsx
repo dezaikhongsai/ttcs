@@ -7,7 +7,7 @@ const ModalEmployee = ({ visible, onClose, employee }) => {
       title= {`Thông tin nhân viên ${employee ? employee.name : ""}`}
       open={visible}
       onCancel={onClose}
-      footer={null} // Không hiển thị footer
+      footer={null} 
     >
       {employee ? (
         <Descriptions bordered column={1}>

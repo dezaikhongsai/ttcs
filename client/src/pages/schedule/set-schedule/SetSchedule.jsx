@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Spin, message, Button, Space } from 'antd';
+import { Spin, message, Button, Space, Switch } from 'antd';
 import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
 import ListShift from './components/ListShift';
+import ShiftTable from './components/ShiftTable';
 
 const SetSchedule = () => {
   const [assignments, setAssignments] = useState([]);
@@ -10,6 +11,8 @@ const SetSchedule = () => {
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('schedule'); // 'schedule' or 'shift'
   const [shifts, setShifts] = useState([]);
+  const [shiftViewMode, setShiftViewMode] = useState('calendar'); // 'calendar' or 'table'
+
   const fetchAssignment = async () => {
     try {
       setLoading(true);
@@ -78,20 +81,32 @@ const SetSchedule = () => {
   }
   return (
     <div className="p-4">
-      <Space style={{ marginBottom: 16 }}>
-        <Button 
-          type={activeView === 'schedule' ? 'primary' : 'default'}
-          onClick={() => setActiveView('schedule')}
-        >
-          Quản lý đăng ký ca làm
-        </Button>
-        <Button 
-          type={activeView === 'shift' ? 'primary' : 'default'}
-          onClick={() => setActiveView('shift')}
-        >
-          Danh sách lịch làm
-        </Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <Space>
+          <Button 
+            type={activeView === 'schedule' ? 'primary' : 'default'}
+            onClick={() => setActiveView('schedule')}
+          >
+            Quản lý đăng ký ca làm
+          </Button>
+          <Button 
+            type={activeView === 'shift' ? 'primary' : 'default'}
+            onClick={() => setActiveView('shift')}
+          >
+            Lịch làm
+          </Button>
+        </Space>
+
+        {activeView === 'shift' && (
+          <Space align="center">
+            <Switch 
+              checked={shiftViewMode === 'table'}
+              onChange={(checked) => setShiftViewMode(checked ? 'table' : 'calendar')}
+            />
+            Xem bảng
+          </Space>
+        )}
+      </div>
 
       <Spin spinning={loading}>
         {error ? (
@@ -104,8 +119,10 @@ const SetSchedule = () => {
               handleCancelSchedule={handleCancelSchedule} 
               loading={loading} 
             />
-          ) : (
+          ) : shiftViewMode === 'calendar' ? (
             <ListShift data={shifts} loading={loading} />
+          ) : (
+            <ShiftTable data={shifts} loading={loading} />
           )
         )}
       </Spin>
