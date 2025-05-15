@@ -44,11 +44,6 @@ export const createAssignment = async (assignmentData) => {
     day: day
   });
 
-  // Giới hạn số ca làm trong một ngày (ví dụ: tối đa 2 ca)
-  // const MAX_ASSIGNMENTS_PER_DAY = 2;
-  // if (assignmentsInDay >= MAX_ASSIGNMENTS_PER_DAY) {
-  //   throw new Error(`Nhân viên đã đăng ký tối đa ${MAX_ASSIGNMENTS_PER_DAY} ca trong ngày!`);
-  // }
 
   const newAssignment = new Assignment({
     day,

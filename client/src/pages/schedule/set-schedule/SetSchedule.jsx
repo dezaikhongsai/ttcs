@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Spin, message, Button, Space, Switch } from 'antd';
-import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts } from './services/schedule.service';
+import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts , deleteShift } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
 import ListShift from './components/ListShift';
 import ShiftTable from './components/ShiftTable';
+import { triggerFocus } from 'antd/es/input/Input';
 
 const SetSchedule = () => {
   const [assignments, setAssignments] = useState([]);
@@ -79,6 +80,17 @@ const SetSchedule = () => {
       setLoading(false);
     }
   }
+  const handleDeleteShiftTable = async (id) => {
+    console.log("Hủy ca làm : ", id);
+    try {
+      setLoading(true);
+      await deleteShift(id);
+      message.success("Hủy ca làm thành công");
+      await fetchShifts();
+    } catch (error) {
+      setLoading(false)
+    }
+  }
   return (
     <div className="p-4">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -127,7 +139,7 @@ const SetSchedule = () => {
             loading={loading}
             onView={(record) => console.log('Xem:', record)}
             onEdit={(record) => console.log('Sửa:', record)}
-            onDelete={(record) => console.log('Xóa:', record)}
+            onDelete={(record) => {handleDeleteShiftTable(record._id)}}
           />
           )
         )}

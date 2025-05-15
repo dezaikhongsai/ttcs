@@ -120,7 +120,7 @@ const ShiftTable = ({ data, loading, onView, onEdit, onDelete }) => {
           <Space wrap>
             {[...new Map(employees.map(emp => [emp._id, emp])).values()].map(emp => (
               <Tag key={emp._id} color="blue">
-                {emp.name}
+                {emp.name} <br />
               </Tag>
             ))}
           </Space>
