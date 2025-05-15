@@ -1,4 +1,3 @@
-import axios from 'axios';
 import apiClient from '../../../../common/api/apiClient';
 
 const assignmentApi = '/assignment';
@@ -44,5 +43,14 @@ export const getShifts = async () => {
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
+    }
+}
+
+export const deleteShift = async (id) => {
+    try {
+        const respone = await apiClient.delete(`${shiftApi}/${id}`);
+        return respone.data;
+    } catch (error) {
+        throw new Error(error.respone?.data?.message || 'Lỗi không xác định')
     }
 }
