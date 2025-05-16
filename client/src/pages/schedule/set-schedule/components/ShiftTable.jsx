@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 const { Title } = Typography;
 
-const ShiftTable = ({ data, loading, onView, onEdit, onDelete }) => {
+const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
   if (!data || data.length === 0) {
     return (
       <div className="p-4">
@@ -145,9 +145,9 @@ const ShiftTable = ({ data, loading, onView, onEdit, onDelete }) => {
           <Button
             type="primary"
             icon={<EyeOutlined />}
-            onClick={() => onView?.(fullData)}
+            onClick={() => onSetShift?.(fullData)}
           >
-            Xem
+            Phân ca
           </Button>
           <Button
             style={{ backgroundColor: '#ffc107', border: 'none', color: '#fff' }}
@@ -186,5 +186,4 @@ const ShiftTable = ({ data, loading, onView, onEdit, onDelete }) => {
     />
   );
 };
-
 export default ShiftTable;

@@ -137,7 +137,7 @@ const SetSchedule = () => {
             <ShiftTable
             data={shifts}
             loading={loading}
-            onView={(record) => console.log('Xem:', record)}
+            onSetShift={(record) => console.log('Phân ca: ', record)}
             onEdit={(record) => console.log('Sửa:', record)}
             onDelete={(record) => {handleDeleteShiftTable(record._id)}}
           />
