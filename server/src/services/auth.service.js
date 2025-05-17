@@ -2,37 +2,34 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import Employee from '../models/employee.model.js';  // Import Employee Model
 
-export const authenticateUser = async ({ email, password }) => {
-  // 1. Tìm user qua email
-  const user = await User.findOne({ email }).populate('employeeId'); // Dùng populate để lấy dữ liệu Employee nếu cần
-  if (!user) {
-    const err = new Error('Email không tồn tại');
-    err.status = 401;
-    throw err;
-  }
-
-  // 2. So sánh mật khẩu
-  const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    const err = new Error('Sai mật khẩu');
-    err.status = 401;
-    throw err;
-  }
-
-  // 3. Tạo payload cho token
+export const generateTokens = (user) => {
   const payload = {
     sub: user._id,
     role: user.role
   };
 
-  // 4. Tạo JWT
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d'
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m'
   });
 
-  // 5. Trả về user (có thể omit password) và token
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
+  });
+
+  return { accessToken, refreshToken };
+};
+
+export const authenticateUser = async ({ email, password }) => {
+  const user = await User.findOne({ email }).populate('employeeId');
+  if (!user) throw Object.assign(new Error('Email không tồn tại'), { status: 401 });
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) throw Object.assign(new Error('Sai mật khẩu'), { status: 401 });
+
+  const { accessToken, refreshToken } = generateTokens(user);
   const { password: _, ...userData } = user.toObject();
-  return { user: userData, token };
+
+  return { user: userData, accessToken, refreshToken };
 };
 
 export const registerUser = async ({ email, password, role, employeeId }) => {

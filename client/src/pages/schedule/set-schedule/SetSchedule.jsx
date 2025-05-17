@@ -53,8 +53,15 @@ const SetSchedule = () => {
       const shiftData = {
         day: record.day,
         workScheduleId: record.workSchedule._id,
-        employeeIds: [record.employee._id]
+        employees: [
+          {
+            employeeId: record.employee._id,
+            roleInShift: record.position
+          }
+        ]
       }
+      console.log("record :", record);
+      console.log("payload : ", shiftData);
       await createShift(shiftData);
       await updateAssignment(record._id, { status: 'Đã duyệt' });
       message.success('Duyệt lịch thành công');

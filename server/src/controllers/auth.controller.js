@@ -4,12 +4,19 @@ import { registerUser } from '../services/auth.service.js';
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { user, token } = await authenticateUser({ email, password });
+    const { user, accessToken, refreshToken } = await authenticateUser({ email, password });
 
-    // Gửi cookie HttpOnly chứa token
-    res.cookie(process.env.COOKIE_NAME || 'token', token, {
+    // Gửi cả access và refresh token dưới dạng HttpOnly cookie
+    res.cookie('token', accessToken, {
       httpOnly: true,
-      maxAge: parseInt(process.env.COOKIE_EXPIRES, 10) || 24 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000, // 15 phút
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'
     });
@@ -17,18 +24,17 @@ export const login = async (req, res, next) => {
     res.json({
       message: 'Đăng nhập thành công',
       user,
-      token
+      accessToken,
+      refreshToken
     });
   } catch (err) {
-    res.status(err.status || 500).json({
-      message: err.message || 'Đã xảy ra lỗi trong quá trình đăng nhập'
-    });
+    res.status(err.status || 500).json({ message: err.message });
     next(err);
   }
 };
-
 export const logout = (req, res) => {
-  res.clearCookie(process.env.COOKIE_NAME || 'token');
+  res.clearCookie('token');
+  res.clearCookie('refreshToken');
   res.json({ message: 'Đã đăng xuất' });
 };
 

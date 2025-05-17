@@ -44,7 +44,7 @@ const ListShift = ({ data, loading }) => {
   data.forEach(dayData => {
     dayData.shifts.forEach(shift => {
       events.push({
-        title: `${shift.workSchedule.workSchedule} - ${shift.employees.map(e => e.name).join(', ')}`,
+        title: `${shift.workSchedule.workSchedule} - ${shift.employees.map(e => e.employees).join(', ')}`,
         start: new Date(`${dayData.day.slice(0, 10)}T${shift.workSchedule.timeStart}`),
         end: new Date(`${dayData.day.slice(0, 10)}T${shift.workSchedule.timeEnd}`),
         resource: shift,

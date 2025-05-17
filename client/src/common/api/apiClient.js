@@ -28,7 +28,7 @@ apiClient.interceptors.response.use(
       error.config._retry = true;
       try {
         const { data } = await axios.post('/api/auth/token', {}, { withCredentials: true });
-        Cookies.set('token', data.token); // Lưu token mới
+        // Cookies.set('token', data.token); // Lưu token mới
         error.config.headers.Authorization = `Bearer ${data.token}`;
         return apiClient(error.config);
       } catch (err) {

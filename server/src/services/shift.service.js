@@ -8,84 +8,95 @@ export const getShifts = async () => {
       select: 'key workSchedule timeStart timeEnd'
     })
     .populate({
-      path: 'shifts.employees',
-      select: 'name position'
+      path: 'shifts.employees.employee',
+      model: 'Employee',
+      select: 'name'
     });
   return shifts;
 };
-
 export const createShift = async (shiftData) => {
-  const { day, workScheduleId, employeeIds } = shiftData;
-  
-  // Validate workScheduleId
+  const { day, workScheduleId, employees } = shiftData;
+
   if (!mongoose.Types.ObjectId.isValid(workScheduleId)) {
     throw new Error('ID của ca làm việc không hợp lệ');
   }
 
-  // Validate employeeIds
-  if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+  if (!Array.isArray(employees) || employees.length === 0) {
     throw new Error('Danh sách nhân viên không hợp lệ');
   }
 
-  // Validate each employee ID
-  const validEmployeeIds = employeeIds.filter(id => mongoose.Types.ObjectId.isValid(id));
-  if (validEmployeeIds.length !== employeeIds.length) {
-    throw new Error('Một hoặc nhiều ID nhân viên không hợp lệ');
+  // Validate từng phần tử trong employees
+  const validEmployees = employees.filter(emp =>
+    emp &&
+    mongoose.Types.ObjectId.isValid(emp.employeeId) &&
+    typeof emp.roleInShift === 'string' &&
+    emp.roleInShift.trim() !== ''
+  );
+
+  if (validEmployees.length !== employees.length) {
+    throw new Error('Một hoặc nhiều nhân viên có thông tin không hợp lệ');
   }
 
-  // Kiểm tra xem đã có ca làm cho ngày này chưa
   let shift = await Shift.findOne({ day });
-  
+
   if (!shift) {
-    // Nếu chưa có, tạo mới
+    // Nếu chưa có shift, tạo mới
     shift = new Shift({
       day,
       shifts: [{
         workSchedule: workScheduleId,
-        employees: validEmployeeIds
+        employees: validEmployees.map(emp => ({
+          employee: emp.employeeId,
+          roleInShift: emp.roleInShift
+        }))
       }]
     });
   } else {
-    // Kiểm tra xem workSchedule đã tồn tại trong ngày chưa
     const existingWorkSchedule = shift.shifts.find(
       s => s.workSchedule.toString() === workScheduleId
     );
 
     if (existingWorkSchedule) {
-      // Kiểm tra nhân viên trùng lặp trong ca làm
-      const duplicateEmployees = validEmployeeIds.filter(employeeId => 
-        existingWorkSchedule.employees.some(existingId => 
-          existingId.toString() === employeeId.toString()
+      // Check trùng nhân viên
+      const duplicateEmployees = validEmployees.filter(emp =>
+        existingWorkSchedule.employees.some(e =>
+          e?.employee?.toString() === emp.employeeId.toString()
         )
       );
-
       if (duplicateEmployees.length > 0) {
         throw new Error('Một hoặc nhiều nhân viên đã được phân công vào ca làm này');
       }
 
-      // Nếu ca làm đã tồn tại và không có nhân viên trùng, thêm nhân viên mới vào
-      existingWorkSchedule.employees = [...existingWorkSchedule.employees, ...validEmployeeIds];
+      // Thêm nhân viên mới
+      existingWorkSchedule.employees.push(...validEmployees.map(emp => ({
+        employee: emp.employeeId,
+        roleInShift: emp.roleInShift
+      })));
     } else {
-      // Nếu ca làm chưa tồn tại, thêm ca làm mới
+      // Thêm ca làm mới
       shift.shifts.push({
         workSchedule: workScheduleId,
-        employees: validEmployeeIds
+        employees: validEmployees.map(emp => ({
+          employee: emp.employeeId,
+          roleInShift: emp.roleInShift
+        }))
       });
     }
   }
 
   await shift.save();
-  
+
   return await Shift.findById(shift._id)
     .populate({
       path: 'shifts.workSchedule',
       select: 'key workSchedule timeStart timeEnd'
     })
     .populate({
-      path: 'shifts.employees',
+      path: 'shifts.employees.employee',
       select: 'name position'
     });
 };
+
 
 export const getShiftsByMonthYear = async (month, year) => {
   const startDate = new Date(year, month - 1, 1);
