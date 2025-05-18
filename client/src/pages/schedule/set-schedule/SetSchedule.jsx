@@ -2,18 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Spin, message, Button, Space, Switch } from 'antd';
 import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts , deleteShift } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
-import ListShift from './components/ListShift';
 import ShiftTable from './components/ShiftTable';
-import { triggerFocus } from 'antd/es/input/Input';
-
 const SetSchedule = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('schedule'); // 'schedule' or 'shift'
   const [shifts, setShifts] = useState([]);
-  const [shiftViewMode, setShiftViewMode] = useState('calendar'); // 'calendar' or 'table'
-
   const fetchAssignment = async () => {
     try {
       setLoading(true);
@@ -115,16 +110,6 @@ const SetSchedule = () => {
             Lịch làm
           </Button>
         </Space>
-
-        {activeView === 'shift' && (
-          <Space align="center">
-            <Switch 
-              checked={shiftViewMode === 'table'}
-              onChange={(checked) => setShiftViewMode(checked ? 'table' : 'calendar')}
-            />
-            Xem bảng
-          </Space>
-        )}
       </div>
 
       <Spin spinning={loading}>
@@ -138,8 +123,6 @@ const SetSchedule = () => {
               handleCancelSchedule={handleCancelSchedule} 
               loading={loading} 
             />
-          ) : shiftViewMode === 'calendar' ? (
-            <ListShift data={shifts} loading={loading} />
           ) : (
             <ShiftTable
             data={shifts}

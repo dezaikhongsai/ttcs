@@ -1,11 +1,17 @@
-import React from 'react';
 import { Table, Space, Tag, Typography, Button } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-
+import ModalEditShift from './ModalEditShift';
+import { useState } from 'react';
 const { Title } = Typography;
 
 const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDelete }) => {
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isModalEditVisible, setIsModalEditVisible] = useState(false);
+  const handleEdit = (shiftRecord) => {
+    setSelectedRecord(shiftRecord);
+    setIsModalEditVisible(true);
+  }
   if (!data || data.length === 0) {
     return (
       <div className="p-4">
@@ -13,7 +19,6 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       </div>
     );
   }
-
   // Gán tên nhân viên vào từng item employees
   const attachEmployeeNames = (data, employeeList) => {
     return data.map(dayData => {
@@ -36,9 +41,7 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       };
     });
   };
-
   const enrichedData = attachEmployeeNames(data, employeeList);
-
   // Group dữ liệu theo ngày và ca làm (trùng workSchedule, timeStart, timeEnd)
   const grouped = [];
   let sttCounter = 1;
@@ -153,22 +156,21 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
         if (index !== firstIndex) return { children: null, props: { rowSpan: 0 } };
 
         const rowCount = grouped.filter(item => item.date === record.date).length;
-        const fullData = enrichedData.find(item => item.day === record.date);
-
+        // const fullData = enrichedData.find(item => item.day === record.date);
         return {
           children: (
             <Space>
               <Button
                 type="primary"
                 icon={<EyeOutlined />}
-                onClick={() => onSetShift?.(fullData)}
+                onClick={() => onSetShift?.(record)}
               >
                 Phân ca
               </Button>
               <Button
                 style={{ backgroundColor: '#ffc107', border: 'none', color: '#fff' }}
                 icon={<EditOutlined />}
-                onClick={() => onEdit?.(fullData)}
+                onClick={() => handleEdit(record)}
               >
                 Sửa
               </Button>
@@ -176,7 +178,7 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
                 type="primary"
                 danger
                 icon={<DeleteOutlined />}
-                onClick={() => onDelete?.(fullData)}
+                onClick={() => onDelete?.(record) }
               >
                 Xóa
               </Button>
@@ -187,17 +189,25 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       },
     }
   ];
-
   return (
-    <Table
-      columns={columns}
-      dataSource={grouped}
-      pagination={true}
-      size="middle"
-      bordered
-      loading={loading}
-      scroll={{ x: 'max-content' }}
-    />
+    <>
+      <Table
+        columns={columns}
+        dataSource={grouped}
+        pagination={true}
+        size="middle"
+        bordered
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+      />
+      <ModalEditShift
+          visible={isModalEditVisible}
+          onCancel={() => setIsModalEditVisible(false)}
+          onOk={()=>{}}
+          shiftData={selectedRecord}
+          employeeList={employeeList}
+        />
+      </>
   );
 };
 
