@@ -13,26 +13,23 @@ export const getShiftsController = async (req, res) => {
     });
   }
 };
-
 export const createShiftController = async (req, res) => {
   try {
-    const { day, workScheduleId, employeeIds } = req.body;
+    const { day, workScheduleId, employees } = req.body;
 
-    // Validate dữ liệu đầu vào
-    if (!day || !workScheduleId || !employeeIds) {
+    if (!day || !workScheduleId || !employees) {
       return res.status(400).json({
         message: 'Vui lòng cung cấp đầy đủ thông tin: ngày, ca làm việc và danh sách nhân viên'
       });
     }
 
-    // Validate employeeIds phải là mảng
-    if (!Array.isArray(employeeIds)) {
+    if (!Array.isArray(employees)) {
       return res.status(400).json({
         message: 'Danh sách nhân viên phải là một mảng'
       });
     }
 
-    const shiftData = { day, workScheduleId, employeeIds };
+    const shiftData = { day, workScheduleId, employees };
     const result = await createShift(shiftData);
 
     res.status(200).json({
@@ -50,6 +47,7 @@ export const createShiftController = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Lấy danh sách ca làm theo tháng và năm

@@ -1,10 +1,9 @@
 import express from 'express';
 import { createShiftController , getShiftsByMonthYearController, getShiftsController , deleteShiftController} from '../controllers/shift.controller.js';
-import { verifyToken } from '../middlewares/auth.middleware.js';
+import { verifyToken , authorizeRoles } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 router.use(verifyToken); 
-
 // Lấy tất cả ca làm
 router.get('/shifts', getShiftsController);
 
@@ -13,11 +12,7 @@ router.get('/shifts/by-month-year', getShiftsByMonthYearController);
 
 // Tạo ca làm mới
 router.post('/shifts', createShiftController);
-
-// Thêm nhân viên vào ca làm
-// router.post('/shifts/add-employees', addEmployeesToShiftController);
-
 // Xóa ca làm
-router.delete('/shifts/:shiftId', deleteShiftController);
+router.delete('/shifts/:shiftId',authorizeRoles(['Admin', 'Manager']), deleteShiftController);
 
 export default router;

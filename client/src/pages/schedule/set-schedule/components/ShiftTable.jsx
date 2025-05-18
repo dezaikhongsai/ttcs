@@ -1,11 +1,17 @@
-import React from 'react';
 import { Table, Space, Tag, Typography, Button } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-
+import ModalEditShift from './ModalEditShift';
+import { useState } from 'react';
 const { Title } = Typography;
 
-const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
+const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDelete }) => {
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isModalEditVisible, setIsModalEditVisible] = useState(false);
+  const handleEdit = (shiftRecord) => {
+    setSelectedRecord(shiftRecord);
+    setIsModalEditVisible(true);
+  }
   if (!data || data.length === 0) {
     return (
       <div className="p-4">
@@ -13,12 +19,34 @@ const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
       </div>
     );
   }
-
+  // Gán tên nhân viên vào từng item employees
+  const attachEmployeeNames = (data, employeeList) => {
+    return data.map(dayData => {
+      const updatedShifts = dayData.shifts.map(shift => {
+        const updatedEmployees = shift.employees.map(emp => {
+          const fullEmp = employeeList.find(e => e._id === emp.employee || e._id === emp._id);
+          return {
+            ...emp,
+            name: fullEmp?.name || 'Không rõ',
+          };
+        });
+        return {
+          ...shift,
+          employees: updatedEmployees,
+        };
+      });
+      return {
+        ...dayData,
+        shifts: updatedShifts,
+      };
+    });
+  };
+  const enrichedData = attachEmployeeNames(data, employeeList);
   // Group dữ liệu theo ngày và ca làm (trùng workSchedule, timeStart, timeEnd)
   const grouped = [];
   let sttCounter = 1;
 
-  data.forEach(dayData => {
+  enrichedData.forEach(dayData => {
     const caMap = {};
 
     dayData.shifts.forEach(shift => {
@@ -27,7 +55,7 @@ const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
         caMap[caKey] = {
           key: `${dayData.day}-${caKey}`,
           date: dayData.day,
-          stt: null, // sẽ cập nhật ở dòng đầu tiên của ngày
+          stt: null,
           workSchedule: shift.workSchedule.workSchedule,
           timeStart: shift.workSchedule.timeStart,
           timeEnd: shift.workSchedule.timeEnd,
@@ -40,20 +68,11 @@ const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
 
     const caList = Object.values(caMap);
 
-    // Gán STT vào dòng đầu tiên trong ngày
     caList.forEach((item, index) => {
       item.stt = index === 0 ? sttCounter : null;
     });
 
     grouped.push(...caList);
-
-    // Thêm dòng chứa các nút hành động
-    grouped.push({
-      key: `action-${dayData.day}`,
-      date: dayData.day,
-      type: 'action',
-    });
-
     sttCounter++;
   });
 
@@ -120,70 +139,76 @@ const ShiftTable = ({ data, loading, onSetShift, onEdit, onDelete }) => {
           <Space wrap>
             {[...new Map(employees.map(emp => [emp._id, emp])).values()].map(emp => (
               <Tag key={emp._id} color="blue">
-                {emp.name} <br />
+                {emp.employee.name + " --> " + emp.roleInShift}  <br />
               </Tag>
+              
             ))}
           </Space>
         ),
     },
-   {
-  title: 'Hành động',
-  key: 'actions',
-  width: 250,
-  align: 'center',
-  render: (_, record, index) => {
-    // chỉ render tại dòng đầu tiên của mỗi ngày
-    const firstIndex = grouped.findIndex(item => item.date === record.date);
-    if (index !== firstIndex) return { children: null, props: { rowSpan: 0 } };
+    {
+      title: 'Hành động',
+      key: 'actions',
+      width: 150,
+      align: 'center',
+      render: (_, record, index) => {
+        const firstIndex = grouped.findIndex(item => item.date === record.date);
+        if (index !== firstIndex) return { children: null, props: { rowSpan: 0 } };
 
-    const rowCount = grouped.filter(item => item.date === record.date).length;
-    const fullData = data.find(item => item.day === record.date);
-
-    return {
-      children: (
-        <Space>
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => onSetShift?.(fullData)}
-          >
-            Phân ca
-          </Button>
-          <Button
-            style={{ backgroundColor: '#ffc107', border: 'none', color: '#fff' }}
-            icon={<EditOutlined />}
-            onClick={() => onEdit?.(fullData)}
-          >
-            Sửa
-          </Button>
-          <Button
-            type="primary"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => onDelete?.(fullData)}
-          >
-            Xóa
-          </Button>
-        </Space>
-      ),
-      props: { rowSpan: rowCount },
-    };
-  },
-}
-
-
+        const rowCount = grouped.filter(item => item.date === record.date).length;
+        // const fullData = enrichedData.find(item => item.day === record.date);
+        return {
+          children: (
+            <Space>
+              <Button
+                type="primary"
+                icon={<EyeOutlined />}
+                onClick={() => onSetShift?.(record)}
+              >
+                Phân ca
+              </Button>
+              <Button
+                style={{ backgroundColor: '#ffc107', border: 'none', color: '#fff' }}
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(record)}
+              >
+                Sửa
+              </Button>
+              <Button
+                type="primary"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => onDelete?.(record) }
+              >
+                Xóa
+              </Button>
+            </Space>
+          ),
+          props: { rowSpan: rowCount },
+        };
+      },
+    }
   ];
-
   return (
-    <Table
-      columns={columns}
-      dataSource={grouped}
-      pagination={false}
-      size="middle"
-      bordered
-      loading={loading}
-      scroll={{ x: 'max-content' }}
-    />
+    <>
+      <Table
+        columns={columns}
+        dataSource={grouped}
+        pagination={true}
+        size="middle"
+        bordered
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+      />
+      <ModalEditShift
+          visible={isModalEditVisible}
+          onCancel={() => setIsModalEditVisible(false)}
+          onOk={()=>{}}
+          shiftData={selectedRecord}
+          employeeList={employeeList}
+        />
+      </>
   );
 };
+
 export default ShiftTable;

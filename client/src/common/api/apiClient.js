@@ -24,18 +24,38 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
+    const originalRequest = error.config;
+
+    // Handle 401 Unauthorized - Token expired or invalid
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
       try {
-        const { data } = await axios.post('/api/auth/token', {}, { withCredentials: true });
-        Cookies.set('token', data.token); // Lưu token mới
-        error.config.headers.Authorization = `Bearer ${data.token}`;
-        return apiClient(error.config);
-      } catch (err) {
-        console.error('Failed to refresh token:', err);
+        // Attempt to refresh token
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/auth/token`, 
+          {}, 
+          { withCredentials: true }
+        );
+        
+        // Update request header with new token
+        originalRequest.headers.Authorization = `Bearer ${data.token}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        // If refresh token fails, redirect to login
+        console.error('Token refresh failed:', refreshError);
+        Cookies.remove('token');
         window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
+
+    // Handle 403 Forbidden - Permission denied
+    if (error.response?.status === 403) {
+      console.error('Permission denied');
+      window.location.href = '/dashboard';
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );
