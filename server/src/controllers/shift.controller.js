@@ -1,4 +1,4 @@
-import { getShifts, createShift, getShiftsByMonthYear, deleteShift } from '../services/shift.service.js';
+import { getShifts, createShift, getShiftsByMonthYear, deleteShift , getShiftByWorkSchedule} from '../services/shift.service.js';
 
 export const getShiftsController = async (req, res) => {
   try {
@@ -48,12 +48,6 @@ export const createShiftController = async (req, res) => {
   }
 };
 
-
-/**
- * Lấy danh sách ca làm theo tháng và năm
- * @param {Object} req - Yêu cầu từ client
- * @param {Object} res - Phản hồi tới client
- */
 export const getShiftsByMonthYearController = async (req, res) => {
   try {
     const { month, year } = req.query;
@@ -89,3 +83,34 @@ export const deleteShiftController = async (req, res) => {
   }
 };
 
+export const updateShiftByWorkScheduleController = async (req, res) => {
+  try {
+    const { shiftId, workScheduleId } = req.params;
+    const { employees } = req.body;
+
+    const shift = await getShiftByWorkSchedule(shiftId, workScheduleId);
+    
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Không thể cập nhật ca làm!'
+    });
+  }
+}
+
+export const getShiftByWorkScheduleController = async (req, res) => {
+  try {
+    const { shiftId } = req.params;
+    const { workScheduleName } = req.query;
+    const shift = await getShiftByWorkSchedule(shiftId, workScheduleName);
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách thành công",
+      data: shift
+    })
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Lấy danh sách thất bại",
+    })
+  }
+}

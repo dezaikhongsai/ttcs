@@ -2,7 +2,7 @@ import apiClient from '../../../../common/api/apiClient';
 
 const assignmentApi = '/assignment';
 const shiftApi = '/shifts';
-
+const employeeApi = '/employees';
 export const getAssignments = async () => {
     try {
         const respone = await apiClient.get(assignmentApi);
@@ -52,5 +52,13 @@ export const deleteShift = async (id) => {
         return respone.data;
     } catch (error) {
         throw new Error(error.respone?.data?.message || 'Lỗi không xác định')
+    }
+}
+export const getEmployeeWithPosition = async () => {
+    try {
+        const response = await apiClient.get(`${employeeApi}/with-position`);
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
     }
 }

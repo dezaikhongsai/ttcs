@@ -1,134 +1,214 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Form,
-  DatePicker,
-  Select,
-  TimePicker,
-  Space,
-  Divider,
-} from 'antd';
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { Modal, Form, Select, Space, Button, Tag, Tooltip, message } from 'antd';
+import { CloseOutlined } from '@ant-design/icons';
+import { getEmployeeWithPosition } from '../services/schedule.service';
 
-const { Option } = Select;
-
-const ModalEditShift = ({ visible, onCancel, onOk, shiftData, employeeList }) => {
+const ModalEditShift = ({ 
+  visible, 
+  onCancel, 
+  onSave,
+  shiftData,
+  loading 
+}) => {
   const [form] = Form.useForm();
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employee, setEmployee] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
 
+  // Khởi tạo form với dữ liệu ban đầu
   useEffect(() => {
-    if (shiftData && shiftData.workSchedule) {
+    if (shiftData) {
       form.setFieldsValue({
-        date: dayjs(shiftData.day),
-        workSchedule: shiftData.workSchedule.workSchedule,
-        timeRange: [
-          dayjs(shiftData.workSchedule.timeStart, 'HH:mm'),
-          dayjs(shiftData.workSchedule.timeEnd, 'HH:mm'),
-        ],
-      });
-  
-      setSelectedEmployees(
-        (shiftData.employees || []).map(emp => ({
-          employeeId: emp.employee?._id,
-          roleInShift: emp.roleInShift,
+        employees: shiftData.employees.map(emp => ({
+          employeeId: emp.employee._id,
+          employeeName: emp.employee.name,
+          roleInShift: emp.roleInShift
         }))
-      );
+      });
     }
   }, [shiftData, form]);
 
-  const handleEmployeeChange = (value) => {
-    const updated = value.map(empId => {
-      const existing = selectedEmployees.find(emp => emp.employeeId === empId);
-      return existing || { employeeId: empId, roleInShift: 'Nhân viên' };
-    });
-    setSelectedEmployees(updated);
+  // Fetch danh sách nhân viên
+  useEffect(() => {
+    const fetchEmployeeList = async () => {
+      try {
+        setLoadingEmployees(true);
+        const response = await getEmployeeWithPosition();
+        console.log("API Response:", response);
+        setEmployee(response);
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    if (visible) {
+      fetchEmployeeList();
+    }
+  }, [visible]);
+
+  // Hàm kiểm tra vị trí nhân viên có phù hợp với vai trò không
+  const validateEmployeeRole = (employeeId, role) => {
+    const selectedEmployee = employee.find(emp => emp._id === employeeId);
+    if (!selectedEmployee) return false;
+
+    // Admin và Pha chế có thể làm mọi vai trò
+    if (selectedEmployee.position === 'Admin' || selectedEmployee.position === 'Pha chế') {
+      return true;
+    }
+
+    // Các vị trí khác phải trùng với chức vụ
+    return selectedEmployee.position === role;
   };
 
-  const handleRoleChange = (empId, newRole) => {
-    setSelectedEmployees(prev =>
-      prev.map(emp => emp.employeeId === empId ? { ...emp, roleInShift: newRole } : emp)
-    );
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      
+      // Kiểm tra từng nhân viên
+      const invalidAssignments = values.employees.filter(
+        emp => !validateEmployeeRole(emp.employeeId, emp.roleInShift)
+      );
+
+      if (invalidAssignments.length > 0) {
+        const invalidEmployee = employee.find(emp => emp._id === invalidAssignments[0].employeeId);
+        message.error(`Nhân viên ${invalidEmployee.name} không thể đảm nhận vai trò ${invalidAssignments[0].roleInShift}`);
+        return;
+      }
+
+      onSave(values);
+    } catch (error) {
+      console.error('Validation failed:', error);
+    }
   };
 
-  const handleSubmit = () => {
-    form.validateFields().then(values => {
-      const result = {
-        day: values.date.format('YYYY-MM-DD'),
-        workSchedule: {
-          workSchedule: values.workSchedule,
-          timeStart: values.timeRange[0].format('HH:mm'),
-          timeEnd: values.timeRange[1].format('HH:mm'),
-        },
-        employees: selectedEmployees.map(emp => ({
-          employee: emp.employeeId,
-          roleInShift: emp.roleInShift,
-        })),
-      };
-      onOk(result);
-    });
+  // Render thông tin ca làm cố định
+  const renderShiftInfo = () => (
+    <div style={{ marginBottom: 20 }}>
+      <h4>Thông tin ca làm:</h4>
+      <Space direction="vertical">
+        <Tag color="blue">{shiftData?.workSchedule}</Tag>
+        <div>
+          <Tag color="success">Bắt đầu: {shiftData?.timeStart}</Tag>
+          <Tag color="error">Kết thúc: {shiftData?.timeEnd}</Tag>
+        </div>
+      </Space>
+    </div>
+  );
+
+  // Tạo options cho Select nhân viên
+  const employeeOptions = React.useMemo(() => {
+    return employee.map(emp => ({
+      value: emp._id,
+      label: emp.name,
+      key: emp._id,
+      title: `${emp.name} - ${emp.position}`
+    }));
+  }, [employee]);
+
+  // Hàm xử lý khi thay đổi vai trò
+  const handleRoleChange = (value, fieldName) => {
+    const employeeId = form.getFieldValue(['employees', fieldName, 'employeeId']);
+    if (!employeeId) return; // Nếu chưa chọn nhân viên thì không cần kiểm tra
+
+    const selectedEmployee = employee.find(emp => emp._id === employeeId);
+    if (!selectedEmployee) return; // Nếu không tìm thấy nhân viên thì không cần kiểm tra
+
+    if (!validateEmployeeRole(employeeId, value)) {
+      message.warning(`Nhân viên ${selectedEmployee.name} không thể đảm nhận vai trò ${value}`);
+    }
   };
 
   return (
     <Modal
-      title="Chỉnh sửa ca làm"
+      title="Cập nhật ca làm"
       open={visible}
       onCancel={onCancel}
-      onOk={handleSubmit}
-      okText="Lưu"
-      cancelText="Hủy"
-      width={600}
+      width={700}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          Hủy
+        </Button>,
+        <Button key="save" type="primary" onClick={handleSave} loading={loading}>
+          Lưu thay đổi
+        </Button>
+      ]}
     >
-      <Form form={form} layout="vertical">
-        <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
-          <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
-        </Form.Item>
-
-        <Form.Item name="workSchedule" label="Ca làm" rules={[{ required: true }]}>
-          <Select placeholder="Chọn ca">
-            <Option value="Ca sáng">Ca sáng</Option>
-            <Option value="Ca chiều">Ca chiều</Option>
-            <Option value="Ca tối">Ca tối</Option>
-          </Select>
-        </Form.Item>
-
-        <Form.Item name="timeRange" label="Thời gian" rules={[{ required: true }]}>
-          <TimePicker.RangePicker format="HH:mm" style={{ width: '100%' }} />
-        </Form.Item>
-
-        <Form.Item label="Nhân viên tham gia">
-          <Select
-            mode="multiple"
-            value={selectedEmployees.map(emp => emp.employeeId)}
-            onChange={handleEmployeeChange}
-            placeholder="Chọn nhân viên"
-            style={{ width: '100%' }}
-          >
-            {employeeList.map(emp => (
-              <Option key={emp._id} value={emp._id}>{emp.name}</Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        {selectedEmployees.length > 0 && (
-          <>
-            <Divider />
-            <div><strong>Vai trò trong ca:</strong></div>
-            {selectedEmployees.map(emp => (
-              <Space key={emp.employeeId} style={{ display: 'flex', marginTop: 8 }}>
-                <span>{employeeList.find(e => e._id === emp.employeeId)?.name || 'Không rõ'}</span>
-                <Select
-                  value={emp.roleInShift}
-                  onChange={val => handleRoleChange(emp.employeeId, val)}
-                  style={{ width: 160 }}
+      {renderShiftInfo()}
+      
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ employees: [] }}
+      >
+        <Form.List name="employees">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map(({ key, name, ...restField }) => (
+                <Space 
+                  key={key} 
+                  align="baseline" 
+                  style={{ display: 'flex', marginBottom: 8 }}
                 >
-                  <Option value="Pha chế">Pha Chế</Option>
-                  <Option value="Phục vụ">Phục vụ</Option>
-                  <Option value="Thu ngân">Thu ngân</Option>
-                </Select>
-              </Space>
-            ))}
-          </>
-        )}
+                  <Form.Item
+                    {...restField}
+                    name={[name, 'employeeId']}
+                    rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}
+                  >
+                    <Select
+                      style={{ width: 200 }}
+                      placeholder="Chọn nhân viên"
+                      loading={loadingEmployees}
+                      options={employeeOptions}
+                      showSearch
+                      optionFilterProp="label"
+                      optionLabelProp="label"
+                      dropdownRender={menu => (
+                        <Tooltip title="Chọn nhân viên" placement="top">
+                          {menu}
+                        </Tooltip>
+                      )}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    {...restField}
+                    name={[name, 'roleInShift']}
+                    rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
+                  >
+                    <Select
+                      style={{ width: 150 }}
+                      placeholder="Chọn vai trò"
+                      options={[
+                        { value: 'Pha chế', label: 'Pha chế' },
+                        { value: 'Phục vụ', label: 'Phục vụ' },
+                        { value: 'Thu ngân', label: 'Thu ngân' }
+                      ]}
+                      onChange={(value) => handleRoleChange(value, name)}
+                    />
+                  </Form.Item>
+
+                  <Button 
+                    type="text" 
+                    icon={<CloseOutlined />} 
+                    onClick={() => remove(name)}
+                    danger
+                  />
+                </Space>
+              ))}
+
+              <Form.Item>
+                <Button 
+                  type="dashed" 
+                  onClick={() => add()} 
+                  block
+                >
+                  Thêm nhân viên
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
       </Form>
     </Modal>
   );

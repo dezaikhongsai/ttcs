@@ -181,3 +181,11 @@ export const getEmployeeStatistics = async () => {
     }
   };
 };
+export const getEmployeeWithPossition = async () => {
+  try {
+    const employees = await Employee.find({}).select('name position _id');
+    return employees;
+  } catch (error) {
+    throw new Error('Lỗi khi lấy danh sách nhân viên và vị trí');
+  }
+}
