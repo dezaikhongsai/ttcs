@@ -54,18 +54,40 @@ export const getShiftsByMonthYearController = async (req, res) => {
 
     if (!month || !year) {
       return res.status(400).json({
+        success: false,
         message: 'Vui lòng cung cấp đầy đủ tháng và năm (mm/yyyy).',
       });
     }
 
-    const shifts = await getShiftsByMonthYear(parseInt(month), parseInt(year));
+    // Validate month and year
+    const monthNum = parseInt(month);
+    const yearNum = parseInt(year);
+
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tháng không hợp lệ. Vui lòng nhập số từ 1 đến 12.',
+      });
+    }
+
+    if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Năm không hợp lệ. Vui lòng nhập năm từ 2000 đến 2100.',
+      });
+    }
+
+    const shifts = await getShiftsByMonthYear(monthNum, yearNum);
 
     res.status(200).json({
+      success: true,
       message: 'Lấy danh sách ca làm thành công!',
       data: shifts,
     });
   } catch (error) {
+    console.error('Error in getShiftsByMonthYearController:', error);
     res.status(500).json({
+      success: false,
       message: error.message || 'Không thể lấy danh sách ca làm!',
     });
   }
@@ -99,18 +121,42 @@ export const updateShiftByWorkScheduleController = async (req, res) => {
 
 export const getShiftByWorkScheduleController = async (req, res) => {
   try {
-    const { shiftId } = req.params;
+    const { id } = req.params;
     const { workScheduleName } = req.query;
-    const shift = await getShiftByWorkSchedule(shiftId, workScheduleName);
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "ID ca làm việc không được để trống"
+      });
+    }
+
+    if (!workScheduleName) {
+      return res.status(400).json({
+        success: false,
+        message: "Tên ca làm việc không được để trống"
+      });
+    }
+
+    const shift = await getShiftByWorkSchedule(id, workScheduleName);
+    
+    if (!shift) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy ca làm việc"
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Lấy danh sách thành công",
       data: shift
-    })
+    });
   } catch (error) {
+    console.error("Error in getShiftByWorkScheduleController:", error);
     res.status(400).json({
       success: false,
-      message: "Lấy danh sách thất bại",
-    })
+      message: error.message || "Lấy danh sách thất bại"
+    });
   }
 }
