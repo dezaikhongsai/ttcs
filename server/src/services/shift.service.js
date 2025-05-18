@@ -174,17 +174,43 @@ export const deleteShift = async (shiftId) => {
 
 export const getShiftByWorkSchedule = async (shiftId, workScheduleName) => {
   try {
-    const shift = await Shift.findById(shiftId);
-    if (!shift) return null;
-    const filterShift = shift.shifts.filter(s => s.workSchedule && s.workSchedule.workSchedule === workScheduleName);
-    return {
+    console.log('Searching for shift with ID:', shiftId);
+    console.log('Looking for workSchedule name:', workScheduleName);
+
+    const shift = await Shift.findById(shiftId)
+      .populate({
+        path: 'shifts.workSchedule',
+        select: 'key workSchedule timeStart timeEnd'
+      })
+      .populate({
+        path: 'shifts.employees.employee',
+        select: 'name position'
+      });
+
+    if (!shift) {
+      console.log('No shift found with ID:', shiftId);
+      return null;
+    }
+
+    console.log('Found shift:', JSON.stringify(shift, null, 2));
+
+    const filteredShifts = shift.shifts.filter(s => {
+      console.log('Checking shift:', s.workSchedule);
+      return s.workSchedule && s.workSchedule.workSchedule === workScheduleName;
+    });
+
+    console.log('Filtered shifts:', JSON.stringify(filteredShifts, null, 2));
+
+    const filteredShift = {
       _id: shift._id,
       day: shift.day,
-      shifts: filterShift
-    }
-    
+      shifts: filteredShifts
+    };
+
+    return filteredShift;
   } catch (error) {
-    console.log("Lỗi : ", error.message);
+    console.log("Lỗi chi tiết:", error);
+    throw error;
   } 
 }
 
