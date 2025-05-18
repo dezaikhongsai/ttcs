@@ -1,12 +1,13 @@
 import express from 'express';
-import { createShiftController , getShiftsByMonthYearController, getShiftsController , deleteShiftController} from '../controllers/shift.controller.js';
+import { createShiftController , getShiftsByMonthYearController, getShiftsController , deleteShiftController , getShiftByWorkScheduleController} from '../controllers/shift.controller.js';
 import { verifyToken , authorizeRoles } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 router.use(verifyToken); 
 // Lấy tất cả ca làm
 router.get('/shifts', getShiftsController);
-
+router.get("/shifts/:id", getShiftByWorkScheduleController);
+router.get('/:id', getShiftsByMonthYearController);
 // Lấy ca làm theo tháng và năm
 router.get('/shifts/by-month-year', getShiftsByMonthYearController);
 

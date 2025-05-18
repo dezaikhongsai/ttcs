@@ -82,8 +82,9 @@ const SetSchedule = () => {
       setLoading(false);
     }
   }
-  const handleDeleteShiftTable = async (id) => {
+  const handleDeleteShiftTable = async (id , record) => {
     console.log("Hủy ca làm : ", id);
+    console.log("record : ", record);
     try {
       setLoading(true);
       await deleteShift(id);
@@ -129,7 +130,7 @@ const SetSchedule = () => {
             loading={loading}
             onSetShift={(record) => console.log('Phân ca: ', record)}
             onEdit={(record) => console.log('Sửa:', record)}
-            onDelete={(record) => {handleDeleteShiftTable(record._id)}}
+            onDelete={(record) => {handleDeleteShiftTable(record._id , record)}}
           />
           )
         )}

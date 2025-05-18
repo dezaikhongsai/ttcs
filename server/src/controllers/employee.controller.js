@@ -78,3 +78,12 @@ export const getEmployeeStatistics = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getEmployeeWithPossition = async (req, res) => {
+  try {
+    const employees = await employeeService.getEmployeeWithPossition();
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

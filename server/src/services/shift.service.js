@@ -172,4 +172,27 @@ export const deleteShift = async (shiftId) => {
   await shift.deleteOne();
 };
 
+export const getShiftByWorkSchedule = async (shiftId, workScheduleName) => {
+  try {
+    const shift = await Shift.findById(shiftId);
+    if (!shift) return null;
+    const filterShift = shift.shifts.filter(s => s.workSchedule && s.workSchedule.workSchedule === workScheduleName);
+    return {
+      _id: shift._id,
+      day: shift.day,
+      shifts: filterShift
+    }
+    
+  } catch (error) {
+    console.log("Lỗi : ", error.message);
+  } 
+}
+
+export const updateShiftByWorkSchedule = async (workScheduleId, shiftData) => {
+  const shift = await Shift.findOne({ 'shifts.workSchedule': workScheduleId });
+  if (!shift) {
+    throw new Error('Không tìm thấy ca làm');
+  }
+  
+};
   
