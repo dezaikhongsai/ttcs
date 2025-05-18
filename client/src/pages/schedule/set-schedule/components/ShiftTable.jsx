@@ -26,7 +26,8 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       _id: record._id,
       key: record.key,
       workSchedule: record.workSchedule,
-      workScheduleId: record.workSchedule?._id || record.workSchedule, // Thêm optional chaining và fallback
+      workScheduleId: record.workScheduleObj?._id,
+      w_id: record.workScheduleObj?._id,
       timeStart: record.timeStart,
       timeEnd: record.timeEnd,
       employees: record.employees,
@@ -105,6 +106,7 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
           date: dayData.day,
           stt: null,
           workSchedule: shift.workSchedule.workSchedule,
+          workScheduleObj: shift.workSchedule,
           timeStart: shift.workSchedule.timeStart,
           timeEnd: shift.workSchedule.timeEnd,
           employees: [...shift.employees],
