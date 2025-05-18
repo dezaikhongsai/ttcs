@@ -9,7 +9,7 @@ router.use(verifyToken);
 router.get('/shifts', getShiftsController);
 
 // Lấy ca làm theo ID và tên ca
-router.get('/shifts/:id/work-schedule', getShiftByWorkScheduleController);
+router.get('/shifts/:id', getShiftByWorkScheduleController);
 
 // Lấy ca làm theo tháng và năm
 router.get('/shifts/by-month-year', getShiftsByMonthYearController);

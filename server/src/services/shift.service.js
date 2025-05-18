@@ -193,14 +193,14 @@ export const getShiftByWorkSchedule = async (shiftId, workScheduleName) => {
     }
 
     console.log('Found shift:', JSON.stringify(shift, null, 2));
+    console.log('Total shifts in day:', shift.shifts.length);
 
     const filteredShifts = shift.shifts.filter(s => {
-      console.log('Checking shift:', s.workSchedule);
       return s.workSchedule && s.workSchedule.workSchedule === workScheduleName;
     });
 
+    console.log('Filtered shifts count:', filteredShifts.length);
     console.log('Filtered shifts:', JSON.stringify(filteredShifts, null, 2));
-
     const filteredShift = {
       _id: shift._id,
       day: shift.day,
