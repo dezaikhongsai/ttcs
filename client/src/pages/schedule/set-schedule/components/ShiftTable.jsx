@@ -1,4 +1,4 @@
-import { Table, Space, Tag, Typography, Button, Modal, Form, DatePicker, Select, Card, Input, Tooltip } from 'antd';
+import { Table, Space, Tag, Typography, Button, Modal, Form, DatePicker, Select, Card, Input, Tooltip, Col } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined, ClockCircleOutlined, PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
@@ -13,6 +13,8 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
   const [isModalAddVisible, setIsModalAddVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [tableLoading, setTableLoading] = useState(false);
+  const [filterType, setFilterType] = useState('day'); // 'day' | 'week' | 'month'
+  const [filterValue, setFilterValue] = useState(null); // dayjs object
 
   const handleEdit = (shiftRecord) => {
     console.log("Chỉnh sửa :", shiftRecord);
@@ -29,7 +31,7 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       _id: record._id,
       key: record.key,
       workSchedule: record.workSchedule,
-      workScheduleObj: record.workScheduleObj,
+      workScheduleObj: record.workScheduleObj._id,
       timeStart: record.timeStart,
       timeEnd: record.timeEnd,
       employees: record.employees,
@@ -148,6 +150,22 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
     return new Date(a.date) - new Date(b.date);
   });
 
+  // Filter dữ liệu theo ngày/tuần/tháng
+  const filteredData = grouped.filter(item => {
+    if (!filterValue) return true;
+    const itemDate = dayjs(item.date);
+    if (filterType === 'day') {
+      return itemDate.isSame(filterValue, 'day');
+    }
+    if (filterType === 'week') {
+      return itemDate.isSame(filterValue, 'week');
+    }
+    if (filterType === 'month') {
+      return itemDate.isSame(filterValue, 'month');
+    }
+    return true;
+  });
+
   // Hàm kiểm tra xem click có nằm trong các cột được phép không
   const isClickableColumn = (columnKey) => {
     return ['workSchedule', 'time', 'employees'].includes(columnKey);
@@ -178,7 +196,9 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       width: 120,
       align: 'center',
       render: (text, record, index) => {
-        if (record.type === 'action') return '';
+        if (filterType === 'day') {
+          return dayjs(text).format('DD/MM/YYYY');
+        }
         const firstIndex = grouped.findIndex(item => item.date === text && !item.type);
         if (index === firstIndex) {
           const rowCount = grouped.filter(item => item.date === text && !item.type).length;
@@ -318,7 +338,21 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
   return (
     <>
       <Space direction="vertical" style={{ width: '100%' }}>
-        <Space style={{ justifyContent: 'flex-end', width: '100%', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Space>
+            <Select value={filterType} onChange={setFilterType} style={{ width: 120 }}>
+              <Select.Option value="day">Ngày</Select.Option>
+              <Select.Option value="week">Tuần</Select.Option>
+              <Select.Option value="month">Tháng</Select.Option>
+            </Select>
+            <DatePicker
+              picker={filterType}
+              value={filterValue}
+              onChange={setFilterValue}
+              format={filterType === 'month' ? 'MM/YYYY' : 'DD/MM/YYYY'}
+              allowClear
+            />
+          </Space>
           <Button 
             type="primary" 
             icon={<UserAddOutlined />}
@@ -326,12 +360,12 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
           >
             Phân ca
           </Button>
-        </Space>
+        </div>
 
         <Table
           columns={columns}
-          dataSource={grouped}
-          pagination={true}
+          dataSource={filteredData}
+          pagination={false}
           size="middle"
           bordered
           loading={loading || tableLoading}
