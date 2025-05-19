@@ -3,6 +3,12 @@ import { ClockCircleOutlined, UserAddOutlined, DeleteOutlined, PlusOutlined, Inf
 import { createShift, getWorkSchedule  , getEmployeeWithPosition} from '../services/schedule.service.js';
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Đăng ký plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ROLE_OPTIONS = [
   { label: 'Phục vụ', value: 'Phục vụ' },
@@ -95,7 +101,7 @@ const ModalAddShift = ({ visible, onCancel, onSuccess }) => {
     try {
       setLoading(true);
       const formattedData = {
-        day: dayjs(values.date).format('YYYY/MM/DD'),
+        day: dayjs(values.date).format('YYYY-MM-DD'),
         workScheduleId: values.workSchedule,
         employees: employees
           .filter(e => e.employee)
