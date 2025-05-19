@@ -94,6 +94,12 @@ const SetSchedule = () => {
       setLoading(false)
     }
   }
+
+  // Hàm xử lý khi cập nhật ca làm thành công
+  const handleShiftUpdate = () => {
+    fetchShifts(); // Refresh lại dữ liệu ca làm
+  };
+
   return (
     <div className="p-4">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -126,12 +132,11 @@ const SetSchedule = () => {
             />
           ) : (
             <ShiftTable
-            data={shifts}
-            loading={loading}
-            onSetShift={(record) => console.log('Phân ca: ', record)}
-            onEdit={(record) => console.log('Sửa:', record)}
-            onDelete={(record) => {handleDeleteShiftTable(record._id , record)}}
-          />
+              data={shifts}
+              loading={loading}
+              onEdit={handleShiftUpdate}
+              onDelete={(record) => {handleDeleteShiftTable(record._id , record)}}
+            />
           )
         )}
       </Spin>
