@@ -1,15 +1,18 @@
 import { Table, Space, Tag, Typography, Button, Modal, Form, DatePicker, Select, Card, Input, Tooltip } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, DeleteOutlined, ClockCircleOutlined, PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import ModalEditShift from './ModalEditShift';
+import ModalAddShift from './ModalAddShift';
 const { Title } = Typography;
 
 const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDelete }) => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedShift, setSelectedShift] = useState(null);
   const [isModalEditVisible, setIsModalEditVisible] = useState(false);
+  const [isModalAddVisible, setIsModalAddVisible] = useState(false);
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
   const handleEdit = (shiftRecord) => {
     console.log("Chỉnh sửa :", shiftRecord);
@@ -26,16 +29,15 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
       _id: record._id,
       key: record.key,
       workSchedule: record.workSchedule,
-      workScheduleId: record.workScheduleObj?._id,
-      w_id: record.workScheduleObj?._id,
+      workScheduleObj: record.workScheduleObj,
       timeStart: record.timeStart,
       timeEnd: record.timeEnd,
       employees: record.employees,
       date: record.date
     };
     
+    console.log("Selected shift data:", selectedShiftData);
     setSelectedShift(selectedShiftData);
-    console.log("Selected shift:", selectedShiftData);
     setIsModalEditVisible(true);
   };
 
@@ -62,7 +64,20 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
   if (!data || data.length === 0) {
     return (
       <div className="p-4">
-        <Title level={4}>Không có dữ liệu ca làm việc</Title>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Space style={{ justifyContent: 'space-between', width: '100%' }}>
+            <Title level={4}>Không có dữ liệu ca làm việc</Title>
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<UserAddOutlined />}
+                onClick={() => setIsModalAddVisible(true)}
+              >
+                Phân ca
+              </Button>
+            </Space>
+          </Space>
+        </Space>
       </div>
     );
   }
@@ -123,6 +138,14 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
 
     grouped.push(...caList);
     sttCounter++;
+  });
+
+  // Sau khi tạo grouped:
+  grouped.sort((a, b) => {
+    if (a.date === b.date) {
+      return a.timeStart.localeCompare(b.timeStart);
+    }
+    return new Date(a.date) - new Date(b.date);
   });
 
   // Hàm kiểm tra xem click có nằm trong các cột được phép không
@@ -225,7 +248,7 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
                   key={emp._id || emp.employee._id} // Thêm key prop
                   color="blue"
                 >
-                  {emp.employee?.name || emp.name}
+                  {`${emp.employee?.name || emp.name} - ${emp.roleInShift}`}
                 </Tag>
               ))}
             </Space>
@@ -248,20 +271,6 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
             <Space>
               <Button
                 type="primary"
-                icon={<EyeOutlined />}
-                onClick={() => onSetShift?.(record)}
-              >
-                Phân ca
-              </Button>
-              <Button
-                style={{ backgroundColor: '#ffc107', border: 'none', color: '#fff' }}
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-              >
-                Sửa
-              </Button>
-              <Button
-                type="primary"
                 danger
                 icon={<DeleteOutlined />}
                 onClick={() => onDelete?.(record)}
@@ -276,46 +285,93 @@ const ShiftTable = ({ data, employeeList = [], loading, onSetShift, onEdit, onDe
     }
   ];
 
+  // Thêm hàm để refresh dữ liệu
+  const handleUpdateSuccess = async () => {
+    try {
+      setTableLoading(true);
+      // Gọi lại API để lấy dữ liệu mới
+      if (typeof onEdit === 'function') {
+        await onEdit();
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setTableLoading(false);
+      setIsModalEditVisible(false);
+      setIsModalAddVisible(false);
+    }
+  };
+
+  const handleAddShiftSuccess = async () => {
+    try {
+      setTableLoading(true);
+      await onEdit();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      
+      setTableLoading(false);
+      setIsModalAddVisible(false);
+    }
+  };
+
   return (
     <>
-      <Table
-        columns={columns}
-        dataSource={grouped}
-        pagination={true}
-        size="middle"
-        bordered
-        loading={loading}
-        scroll={{ x: 'max-content' }}
-        onRow={(record) => ({
-          onClick: (e) => {
-            // Kiểm tra xem click có nằm trong các cột được phép không
-            const targetCell = e.target.closest('td');
-            if (targetCell) {
-              const columnKey = targetCell.getAttribute('data-column-key');
-              if (isClickableColumn(columnKey)) {
-                handleRowClick(record);
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Space style={{ justifyContent: 'flex-end', width: '100%', marginBottom: 16 }}>
+          <Button 
+            type="primary" 
+            icon={<UserAddOutlined />}
+            onClick={() => setIsModalAddVisible(true)}
+          >
+            Phân ca
+          </Button>
+        </Space>
+
+        <Table
+          columns={columns}
+          dataSource={grouped}
+          pagination={true}
+          size="middle"
+          bordered
+          loading={loading || tableLoading}
+          scroll={{ x: 'max-content' }}
+          onRow={(record) => ({
+            onClick: (e) => {
+              const targetCell = e.target.closest('td');
+              if (targetCell) {
+                const columnKey = targetCell.getAttribute('data-column-key');
+                if (isClickableColumn(columnKey)) {
+                  handleShiftClick(record);
+                }
               }
+            },
+            onMouseEnter: () => setHoveredRow(record.key),
+            onMouseLeave: () => setHoveredRow(null),
+            style: {
+              cursor: 'pointer',
+              backgroundColor: hoveredRow === record.key ? '#f5f5f5' : 'white',
+              transition: 'background-color 0.3s'
             }
-          },
-          onMouseEnter: () => setHoveredRow(record.key),
-          onMouseLeave: () => setHoveredRow(null),
-          style: {
-            cursor: 'pointer',
-            backgroundColor: hoveredRow === record.key ? '#f5f5f5' : 'white',
-            transition: 'background-color 0.3s'
+          })}
+          rowClassName={(record) => 
+            selectedShift?.key === record.key ? 'selected-row' : ''
           }
-        })}
-        rowClassName={(record) => 
-          selectedShift?.key === record.key ? 'selected-row' : ''
-        }
-      />
+        />
+      </Space>
+
       <ModalEditShift
         visible={isModalEditVisible}
         onCancel={() => setIsModalEditVisible(false)}
-        onSave={() => {}}
+        onSave={handleUpdateSuccess}
         shiftData={selectedShift}
-        // employeeList={employeeList}
-        loading={loading}
+        loading={loading || tableLoading}
+      />
+
+      <ModalAddShift
+        visible={isModalAddVisible}
+        onCancel={() => setIsModalAddVisible(false)}
+        onSuccess={handleAddShiftSuccess}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { getShifts, createShift, getShiftsByMonthYear, deleteShift , getShiftByWorkSchedule} from '../services/shift.service.js';
+import { getShifts, createShift, getShiftsByMonthYear, deleteShift, updateEmployeesInShift, deleteWorkScheduleInShift } from '../services/shift.service.js';
 
 export const getShiftsController = async (req, res) => {
   try {
@@ -107,56 +107,63 @@ export const deleteShiftController = async (req, res) => {
 
 export const updateShiftByWorkScheduleController = async (req, res) => {
   try {
-    const { shiftId, workScheduleId } = req.params;
+    const { day, workScheduleId } = req.body;
     const { employees } = req.body;
 
-    const shift = await getShiftByWorkSchedule(shiftId, workScheduleId);
-    
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Không thể cập nhật ca làm!'
-    });
-  }
-}
-
-export const getShiftByWorkScheduleController = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { workScheduleName } = req.query;
-    
-    if (!id) {
+    if (!day || !workScheduleId || !employees) {
       return res.status(400).json({
         success: false,
-        message: "ID ca làm việc không được để trống"
+        message: 'Vui lòng cung cấp đầy đủ thông tin: ngày, ca làm việc và danh sách nhân viên'
       });
     }
 
-    if (!workScheduleName) {
+    if (!Array.isArray(employees)) {
       return res.status(400).json({
         success: false,
-        message: "Tên ca làm việc không được để trống"
+        message: 'Danh sách nhân viên phải là một mảng'
       });
     }
 
-    const shift = await getShiftByWorkSchedule(id, workScheduleName);
-    
-    if (!shift) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy ca làm việc"
-      });
-    }
+    const result = await updateEmployeesInShift(day, workScheduleId, employees);
 
     res.status(200).json({
       success: true,
-      message: "Lấy danh sách thành công",
-      data: shift
+      message: 'Cập nhật nhân viên thành công!',
+      data: result
     });
   } catch (error) {
-    console.error("Error in getShiftByWorkScheduleController:", error);
+    console.error('Error in updateShiftByWorkScheduleController:', error);
     res.status(400).json({
       success: false,
-      message: error.message || "Lấy danh sách thất bại"
+      message: error.message || 'Không thể cập nhật nhân viên!'
     });
   }
 }
+
+export const deleteWorkScheduleInShiftController = async (req, res) => {
+  try {
+    const { day, workScheduleId } = req.query;
+
+    if (!day || !workScheduleId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin: ngày và ID ca làm việc'
+      });
+    }
+
+    const result = await deleteWorkScheduleInShift(day, workScheduleId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Xóa ca làm việc thành công!',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error in deleteWorkScheduleInShiftController:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Không thể xóa ca làm việc!'
+    });
+  }
+};
+
