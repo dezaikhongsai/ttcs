@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Select, Space, Button, Tag, Tooltip, message, Popconfirm } from 'antd';
-import { CloseOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getEmployeeWithPosition , updateShiftByWorkSchedule , deleteWorkScheduleInShift } from '../services/schedule.service';
+import { Modal, Form, Select, Space, Button, Tag, Tooltip, message, Popconfirm, Row, Col } from 'antd';
+import { CloseOutlined, DeleteOutlined , PlusOutlined } from '@ant-design/icons';
+import { getEmployeeWithPosition, updateShiftByWorkSchedule, deleteWorkScheduleInShift } from '../services/schedule.service';
 
 const ModalEditShift = ({ 
   visible, 
@@ -54,12 +54,11 @@ const ModalEditShift = ({
     const selectedEmployee = employee.find(emp => emp._id === employeeId);
     if (!selectedEmployee) return false;
 
-    // Admin và Pha chế có thể làm mọi vai trò
     if (selectedEmployee.position === 'Admin' || selectedEmployee.position === 'Pha chế') {
       return true;
     }
 
-    // Các vị trí khác phải trùng với chức vụ
+    // Phục vụ chỉ làm Phục vụ, Thu ngân chỉ làm Thu ngân
     return selectedEmployee.position === role;
   };
 
@@ -98,7 +97,7 @@ const ModalEditShift = ({
       // Lấy workScheduleId từ shiftData
       console.log('workScheduleObj:', shiftData.workScheduleObj);
       
-      if (!shiftData.workScheduleObj || !shiftData.workScheduleObj._id) {
+      if (!shiftData.workScheduleObj) {
         message.error('Không tìm thấy ID ca làm!');
         return;
       }
@@ -106,7 +105,7 @@ const ModalEditShift = ({
       // Chuẩn bị dữ liệu để gửi lên server
       const payload = {
         day: shiftData.date,
-        workScheduleId: shiftData.workScheduleObj._id,
+        workScheduleId: shiftData.workScheduleObj,
         employees: values.employees.map(emp => ({
           employeeId: emp.employeeId,
           roleInShift: emp.roleInShift
@@ -135,14 +134,14 @@ const ModalEditShift = ({
   const handleDelete = async () => {
     try {
       setDeleteLoading(true);
-      if (!shiftData || !shiftData.date || !shiftData.workScheduleObj?._id) {
+      if (!shiftData || !shiftData.date || !shiftData.workScheduleObj) {
         message.error('Không tìm thấy thông tin ca làm!');
         return;
       }
       const formattedDate = new Date(shiftData.date).toISOString();
       const payload = {
         day: formattedDate,
-        workScheduleId: shiftData.workScheduleObj._id
+        workScheduleId: shiftData.workScheduleObj
       };
       const response = await deleteWorkScheduleInShift(payload);
       if (response.success) {
@@ -272,77 +271,116 @@ const ModalEditShift = ({
           <Form.List name="employees">
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <Space 
-                    key={key} 
-                    align="baseline" 
-                    style={{ display: 'flex', marginBottom: 8 }}
-                  >
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'employeeId']}
-                      rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}
-                    >
-                      <Select
-                        style={{ width: 200 }}
-                        placeholder="Chọn nhân viên"
-                        loading={loadingEmployees}
-                        options={employeeOptions}
-                        showSearch
-                        optionFilterProp="label"
-                        optionLabelProp="label"
-                        onChange={(value) => handleEmployeeChange(value, name)}
-                        dropdownRender={menu => (
-                          <Tooltip title="Chọn nhân viên" placement="top">
-                            {menu}
-                          </Tooltip>
-                        )}
-                      />
-                    </Form.Item>
-
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'roleInShift']}
-                      rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
-                    >
-                      <Select
-                        style={{ width: 150 }}
-                        placeholder="Chọn vai trò"
-                        options={[
-                          { value: 'Pha chế', label: 'Pha chế' },
-                          { value: 'Phục vụ', label: 'Phục vụ' },
-                          { value: 'Thu ngân', label: 'Thu ngân' }
-                        ]}
-                        onChange={(value) => handleRoleChange(value, name)}
-                      />
-                    </Form.Item>
-
-                    <Popconfirm
-                      title="Xóa nhân viên"
-                      description="Bạn có chắc chắn muốn xóa nhân viên này khỏi ca làm?"
-                      onConfirm={() => remove(name)}
-                      okText="Xóa"
-                      cancelText="Hủy"
-                      okButtonProps={{ danger: true }}
-                    >
-                      <Button 
-                        type="text" 
-                        icon={<CloseOutlined />} 
-                        danger
-                      />
-                    </Popconfirm>
-                  </Space>
-                ))}
-
-                <Form.Item>
-                  <Button 
-                    type="dashed" 
-                    onClick={() => add()} 
-                    block
-                  >
-                    Thêm nhân viên
-                  </Button>
-                </Form.Item>
+                {fields.map(({ key, name, ...restField }, idx) => {
+                  // Lấy danh sách nhân viên đã chọn (trừ chính dòng này)
+                  const selectedEmployeeIds = form.getFieldValue(['employees'])?.map((e, i) => i !== idx ? e?.employeeId : null).filter(Boolean) || [];
+                  // Lấy employeeId hiện tại
+                  const currentEmployeeId = form.getFieldValue(['employees', idx, 'employeeId']);
+                  // Lấy thông tin nhân viên hiện tại
+                  const emp = employee.find(e => e._id === currentEmployeeId);
+                  // Xác định role hợp lệ
+                  let validRoles = [
+                    { value: 'Phục vụ', label: 'Phục vụ' },
+                    { value: 'Pha chế', label: 'Pha chế' },
+                    { value: 'Thu ngân', label: 'Thu ngân' }
+                  ];
+                  if (emp?.position === 'Phục vụ') validRoles = [validRoles[0]];
+                  if (emp?.position === 'Thu ngân') validRoles = [validRoles[2]];
+                  // Nếu là Pha chế hoặc Admin thì giữ nguyên validRoles (tức là chọn được tất cả)
+                  // Ẩn nhân viên đã chọn khỏi select
+                  const filteredOptions = employee.filter(e => !selectedEmployeeIds.includes(e._id) || e._id === currentEmployeeId);
+                  return (
+                    <Row gutter={8} key={key} style={{ marginBottom: 8 }} align="middle">
+                      <Col flex="auto">
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'employeeId']}
+                          rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}
+                        >
+                          <Select
+                            showSearch
+                            placeholder="Chọn nhân viên"
+                            value={currentEmployeeId}
+                            style={{ width: '100%' }}
+                            onChange={val => {
+                              const emp = employee.find(e => e._id === val);
+                              if (emp?.position === 'Phục vụ') {
+                                form.setFields([{
+                                  name: ['employees', idx, 'roleInShift'],
+                                  value: 'Phục vụ'
+                                }]);
+                              } else if (emp?.position === 'Thu ngân') {
+                                form.setFields([{
+                                  name: ['employees', idx, 'roleInShift'],
+                                  value: 'Thu ngân'
+                                }]);
+                              } else {
+                                // Do not set a default role for other positions, allow manual selection
+                                form.setFields([{
+                                  name: ['employees', idx, 'roleInShift'],
+                                  value: undefined
+                                }]);
+                              }
+                            }}
+                            filterOption={(input, option) =>
+                              option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                            }
+                          >
+                            {filteredOptions.map(emp => (
+                              <Select.Option key={emp._id} value={emp._id}>
+                                {emp.name} - {emp.position}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col flex="180px">
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'roleInShift']}
+                          rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
+                        >
+                          <Select
+                            placeholder="Chọn vai trò"
+                            disabled={emp?.position === 'Phục vụ' || emp?.position === 'Thu ngân'}
+                            value={form.getFieldValue(['employees', idx, 'roleInShift'])}
+                            onChange={val => handleRoleChange(val, idx)}
+                          >
+                            {validRoles.map(role => (
+                              <Select.Option key={role.value} value={role.value}>{role.label}</Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col>
+                        <Popconfirm
+                          title="Xóa nhân viên"
+                          description="Bạn có chắc chắn muốn xóa nhân viên này khỏi ca làm?"
+                          onConfirm={() => remove(name)}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          okButtonProps={{ danger: true }}
+                        >
+                          <Button
+                            icon={<DeleteOutlined />}
+                            danger
+                            type="text"
+                            disabled={fields.length === 1}
+                          />
+                        </Popconfirm>
+                      </Col>
+                    </Row>
+                  );
+                })}
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusOutlined />}
+                  onClick={() => add()}
+                  style={{ marginTop: 8 }}
+                >
+                  Thêm nhân viên
+                </Button>
               </>
             )}
           </Form.List>
