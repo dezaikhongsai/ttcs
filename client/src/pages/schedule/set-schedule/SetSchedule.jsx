@@ -3,6 +3,7 @@ import { Spin, message, Button, Space, Switch } from 'antd';
 import { getAssignments , createShift , updateAssignment , deleteAssignment , getShifts , deleteShift } from './services/schedule.service';
 import ScheduleTable from './components/ScheduleTable';
 import ShiftTable from './components/ShiftTable';
+import { ContactsOutlined, CalendarOutlined } from '@ant-design/icons';
 const SetSchedule = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -107,12 +108,14 @@ const SetSchedule = () => {
           <Button 
             type={activeView === 'schedule' ? 'primary' : 'default'}
             onClick={() => setActiveView('schedule')}
+            icon = {<ContactsOutlined />}
           >
             Quản lý đăng ký ca làm
           </Button>
           <Button 
             type={activeView === 'shift' ? 'primary' : 'default'}
             onClick={() => setActiveView('shift')}
+            icon={<CalendarOutlined />}
           >
             Lịch làm
           </Button>

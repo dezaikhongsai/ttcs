@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Select, Space, Typography, Card, Calendar, Badge, Tag } from 'antd';
-import { getWorkSchedule, getShifts } from './services/dashboard.service';
+import { Button, Select, Space, Typography, Card, Row, Col, DatePicker } from 'antd';
+import { CheckCircleOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { getWorkSchedule, getShifts, getEmployeeWithPosition } from './services/dashboard.service';
 import dayjs from 'dayjs';
+import weekday from 'dayjs/plugin/weekday';
+dayjs.extend(weekday);
 
 const { Title, Text } = Typography;
 
@@ -12,13 +15,18 @@ const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [workSchedules, setWorkSchedules] = useState([]);
   const [shifts, setShifts] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [weekStart, setWeekStart] = useState(dayjs().startOf('week').add(1, 'day'));
+  const [filterType, setFilterType] = useState('day'); // 'day' | 'week' | 'month'
+  const [filterValue, setFilterValue] = useState(dayjs());
+  const [selectedWorkSchedule, setSelectedWorkSchedule] = useState(null);
 
   // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
@@ -32,25 +40,41 @@ const Dashboard = () => {
         console.error('Error fetching work schedules:', error);
       }
     };
-
     fetchWorkSchedules();
   }, []);
 
-  // Fetch shifts for calendar view
+  // Fetch shifts & employees for schedule view
   useEffect(() => {
-    const fetchShifts = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getShifts();
-        setShifts(data);
+        const [shiftsData, employeesData] = await Promise.all([
+          getShifts(),
+          getEmployeeWithPosition()
+        ]);
+        setShifts(shiftsData);
+        setEmployees(employeesData);
       } catch (error) {
-        console.error('Error fetching shifts:', error);
+        console.error('Error fetching shifts or employees:', error);
       }
     };
-
     if (viewMode === 'schedule') {
-      fetchShifts();
+      fetchData();
     }
   }, [viewMode]);
+
+  // Khi đổi filterType hoặc filterValue, cập nhật selectedDate và weekStart
+  useEffect(() => {
+    if (filterType === 'day') {
+      setSelectedDate(filterValue);
+      setWeekStart(filterValue.startOf('week').add(1, 'day'));
+    } else if (filterType === 'week') {
+      setWeekStart(filterValue.startOf('week').add(1, 'day'));
+      setSelectedDate(filterValue.startOf('week').add(1, 'day'));
+    } else if (filterType === 'month') {
+      setWeekStart(filterValue.startOf('month').startOf('week').add(1, 'day'));
+      setSelectedDate(filterValue.startOf('month').startOf('week').add(1, 'day'));
+    }
+  }, [filterType, filterValue]);
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
@@ -61,70 +85,94 @@ const Dashboard = () => {
   };
 
   const handleCheckIn = () => {
-    // Implement check-in logic
-    console.log('Check-in clicked');
+    if (!selectedWorkSchedule) return;
+    const now = new Date();
+    console.log('Check-in:', {
+      employeeId: employee?._id || employee,
+      workScheduleId: selectedWorkSchedule,
+      time: now.toLocaleTimeString(),
+    });
   };
 
   const handleCheckOut = () => {
-    // Implement check-out logic
-    console.log('Check-out clicked');
+    if (!selectedWorkSchedule) return;
+    const now = new Date();
+    console.log('Check-out:', {
+      employeeId: employee?._id || employee,
+      workScheduleId: selectedWorkSchedule,
+      time: now.toLocaleTimeString(),
+    });
   };
 
+  // Helper: get 7 days of current week
+  const getWeekDays = () => {
+    return Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
+  };
+
+  // Helper: lấy shifts của ngày được chọn
+  const getShiftsBySelectedDate = (date) => {
+    const formatted = date.format('YYYY-MM-DD');
+    const dayObj = shifts.find(item => dayjs(item.day).format('YYYY-MM-DD') === formatted);
+    if (!dayObj || !Array.isArray(dayObj.shifts)) return [];
+    return dayObj.shifts;
+  };
+
+  // Helper: group shifts by workSchedule name
+  const groupShiftsByWorkSchedule = (shiftsArr) => {
+    const grouped = {};
+    shiftsArr.forEach(shift => {
+      const wsName = shift.workSchedule?.name || shift.workSchedule?.workSchedule || 'Chưa rõ';
+      if (!grouped[wsName]) grouped[wsName] = [];
+      grouped[wsName].push(shift);
+    });
+    return grouped;
+  };
+
+  // Helper: get color for position
   const getPositionColor = (position) => {
     switch (position) {
-      case 'Admin':
-        return 'red';
-      case 'Quản lý':
-        return 'blue';
-      case 'Thu ngân':
-        return 'green';
-      case 'Pha chế':
-        return 'orange';
-      case 'Phục vụ':
-        return 'purple';
-      default:
-        return 'gray';
+      case 'Admin': return 'red';
+      case 'Quản lý': return 'blue';
+      case 'Thu ngân': return 'green';
+      case 'Pha chế': return 'orange';
+      case 'Phục vụ': return 'purple';
+      default: return 'gray';
     }
   };
 
-  const dateCellRender = (value) => {
-    const formattedDate = value.format('YYYY-MM-DD');
-    const dayShifts = shifts.filter(shift => dayjs(shift.date).format('YYYY-MM-DD') === formattedDate);
+  // Week navigation
+  const handlePrevWeek = () => {
+    setWeekStart(weekStart.subtract(7, 'day'));
+    setSelectedDate(weekStart.subtract(7, 'day'));
+  };
+  const handleNextWeek = () => {
+    setWeekStart(weekStart.add(7, 'day'));
+    setSelectedDate(weekStart.add(7, 'day'));
+  };
 
-    // Nhóm theo ca làm
-    const groupedByWorkSchedule = {};
-    dayShifts.forEach(shift => {
-      if (!groupedByWorkSchedule[shift.workSchedule]) {
-        groupedByWorkSchedule[shift.workSchedule] = [];
+  // Helper: map employee info for each shift
+  const enrichShiftEmployees = (shift) => {
+    if (!shift.employees || shift.employees.length === 0) return [];
+    return shift.employees.map(emp => {
+      // Nếu emp đã có name, trả về luôn
+      if (emp.name) return emp;
+      // Nếu emp.employee là object
+      if (emp.employee && typeof emp.employee === 'object') {
+        return {
+          ...emp,
+          name: emp.employee.name || 'Không rõ',
+          position: emp.employee.position || emp.roleInShift || 'Không rõ',
+        };
       }
-      groupedByWorkSchedule[shift.workSchedule].push(shift);
+      // Nếu emp.employee là id hoặc emp._id/emp.employeeId
+      const id = emp.employee || emp._id || emp.employeeId;
+      const found = employees.find(e => e._id === id);
+      return {
+        ...emp,
+        name: found?.name || 'Không rõ',
+        position: found?.position || emp.roleInShift || 'Không rõ',
+      };
     });
-
-    return (
-      <div style={{ padding: 0, margin: 0 }}>
-        {Object.entries(groupedByWorkSchedule).map(([workSchedule, shiftsInSchedule], idx) => (
-          <div key={idx} style={{ marginBottom: 6, background: '#f0f5ff', borderRadius: 4, padding: 4 }}>
-            <b>{workSchedule}</b>
-            {shiftsInSchedule.map((shift, i) => (
-              <div key={i} style={{ fontSize: 12, marginLeft: 4 }}>
-                <div>
-                  <span style={{ color: '#555' }}>Bắt đầu: {shift.timeStart} | Kết thúc: {shift.timeEnd}</span>
-                </div>
-                {shift.employees && shift.employees.length > 0 && (
-                  <ul style={{ paddingLeft: 16, margin: 0 }}>
-                    {shift.employees.map((emp, j) => (
-                      <li key={j} style={{ color: '#222' }}>
-                        {emp.name} - <span style={{ color: '#1890ff' }}>{emp.position}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -135,12 +183,14 @@ const Dashboard = () => {
             <Button
               type={viewMode === 'attendance' ? 'primary' : 'default'}
               onClick={() => setViewMode('attendance')}
+              icon={<CheckCircleOutlined />}
             >
               Chấm công
             </Button>
             <Button
               type={viewMode === 'schedule' ? 'primary' : 'default'}
               onClick={() => setViewMode('schedule')}
+              icon={<CalendarOutlined />}
             >
               Lịch làm
             </Button>
@@ -160,6 +210,8 @@ const Dashboard = () => {
                 <Select
                   style={{ width: 200 }}
                   placeholder="Chọn ca làm"
+                  value={selectedWorkSchedule}
+                  onChange={setSelectedWorkSchedule}
                 >
                   {workSchedules.map((schedule) => (
                     <Select.Option key={schedule._id} value={schedule._id}>
@@ -168,10 +220,10 @@ const Dashboard = () => {
                   ))}
                 </Select>
                 <Space>
-                  <Button type="primary" onClick={handleCheckIn}>
+                  <Button type="primary" onClick={handleCheckIn} disabled={!selectedWorkSchedule}>
                     Check-in
                   </Button>
-                  <Button type="primary" danger onClick={handleCheckOut}>
+                  <Button type="primary" danger onClick={handleCheckOut} disabled={!selectedWorkSchedule}>
                     Check-out
                   </Button>
                 </Space>
@@ -179,11 +231,90 @@ const Dashboard = () => {
             </div>
           </Card>
         ) : (
-          <Card>
-            <Calendar
-              cellRender={dateCellRender}
-              mode="month"
-            />
+          <Card bodyStyle={{ background: '#fff', padding: 24, borderRadius: 16 }} style={{ background: '#fff', borderRadius: 16 }}>
+            {/* Bộ lọc ngày/tuần/tháng và DatePicker */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 12, justifyContent: 'center' }}>
+              <Select value={filterType} onChange={val => setFilterType(val)} style={{ width: 120 }}>
+                <Select.Option value="day">Ngày</Select.Option>
+                <Select.Option value="week">Tuần</Select.Option>
+                <Select.Option value="month">Tháng</Select.Option>
+              </Select>
+              <DatePicker
+                picker={filterType}
+                value={filterValue}
+                onChange={val => setFilterValue(val || dayjs())}
+                format={filterType === 'month' ? 'MM/YYYY' : 'DD/MM/YYYY'}
+                allowClear={false}
+                style={{ width: 160 }}
+              />
+            </div>
+            {/* Thanh chọn ngày ngang */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, justifyContent: 'center', gap: 8 }}>
+              <Button icon={<LeftOutlined />} onClick={handlePrevWeek} style={{ background: '#f5f5f5', color: '#222', border: 'none' }} />
+              <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 8, maxWidth: 900 }}>
+                {getWeekDays().map((date) => (
+                  <div
+                    key={date.format('YYYY-MM-DD')}
+                    style={{
+                      padding: '12px 0',
+                      width: 110,
+                      borderRadius: 12,
+                      background: date.isSame(selectedDate, 'day') ? '#e6f7ff' : '#f5f5f5',
+                      color: date.isSame(selectedDate, 'day') ? '#1890ff' : '#222',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      border: date.isSame(selectedDate, 'day') ? '2px solid #1890ff' : 'none',
+                      fontWeight: date.isSame(selectedDate, 'day') ? 700 : 400,
+                      fontSize: 17,
+                      boxShadow: date.isSame(selectedDate, 'day') ? '0 2px 8px #1890ff40' : 'none',
+                      transition: 'all 0.2s',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    }}
+                    onClick={() => setSelectedDate(date)}
+                  >
+                    <div>{date.format('DD/MM')}</div>
+                    <div style={{ fontSize: 18 }}>{['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'][date.day() === 0 ? 6 : date.day() - 1]}</div>
+                  </div>
+                ))}
+              </div>
+              <Button icon={<RightOutlined />} onClick={handleNextWeek} style={{ background: '#f5f5f5', color: '#222', border: 'none' }} />
+            </div>
+            {/* Danh sách ca làm theo ngày */}
+            <div>
+              {getShiftsBySelectedDate(selectedDate).length === 0 ? (
+                <div style={{ color: '#888', textAlign: 'center', marginTop: 32 }}>Không có ca làm nào cho ngày này.</div>
+              ) : (
+                <Row gutter={[16, 16]}>
+                  {Object.entries(groupShiftsByWorkSchedule(getShiftsBySelectedDate(selectedDate))).map(([workSchedule, shiftsInSchedule], idx) => (
+                    <Col xs={24} md={12} key={idx}>
+                      <Card
+                        title={<span style={{ fontWeight: 600, color: '#222' }}>{workSchedule}</span>}
+                        style={{ marginBottom: 16, borderRadius: 16, background: '#fff', color: '#222', boxShadow: '0 2px 8px #0001' }}
+                        headStyle={{ background: '#fff', color: '#222', borderRadius: 16, fontSize: 18 }}
+                        bodyStyle={{ background: '#fff', color: '#222' }}
+                      >
+                        {shiftsInSchedule.map((shift, i) => (
+                          <div key={i} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
+                            <div style={{ color: '#555', fontSize: 15, marginBottom: 4 }}>
+                              Bắt đầu: {shift.workSchedule?.timeStart || shift.timeStart || ''} | Kết thúc: {shift.workSchedule?.timeEnd || shift.timeEnd || ''}
+                            </div>
+                            {enrichShiftEmployees(shift).length > 0 && (
+                              <ul style={{ paddingLeft: 16, margin: '8px 0' }}>
+                                {enrichShiftEmployees(shift).map((emp, j) => (
+                                  <li key={j} style={{ color: '#222', marginBottom: 2, fontSize: 15 }}>
+                                    {emp.name} - <span style={{ color: getPositionColor(emp.position), fontWeight: 500 }}>{emp.position}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              )}
+            </div>
           </Card>
         )}
       </Space>

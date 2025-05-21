@@ -19,3 +19,12 @@ export const getShifts = async () => {
         throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
     }
 };
+
+export const getEmployeeWithPosition = async () => {
+    try {
+        const response = await apiClient.get('/employees/with-position');
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Lỗi không xác định!');
+    }
+};
