@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Select, Space, Typography, Card, Row, Col } from 'antd';
+import { Button, Select, Space, Typography, Card, Row, Col, DatePicker } from 'antd';
 import { CheckCircleOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { getWorkSchedule, getShifts, getEmployeeWithPosition } from './services/dashboard.service';
 import dayjs from 'dayjs';
+import weekday from 'dayjs/plugin/weekday';
+dayjs.extend(weekday);
 
 const { Title, Text } = Typography;
 
@@ -16,6 +18,9 @@ const Dashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [weekStart, setWeekStart] = useState(dayjs().startOf('week').add(1, 'day'));
+  const [filterType, setFilterType] = useState('day'); // 'day' | 'week' | 'month'
+  const [filterValue, setFilterValue] = useState(dayjs());
+  const [selectedWorkSchedule, setSelectedWorkSchedule] = useState(null);
 
   // Update current time every second
   useEffect(() => {
@@ -57,6 +62,20 @@ const Dashboard = () => {
     }
   }, [viewMode]);
 
+  // Khi đổi filterType hoặc filterValue, cập nhật selectedDate và weekStart
+  useEffect(() => {
+    if (filterType === 'day') {
+      setSelectedDate(filterValue);
+      setWeekStart(filterValue.startOf('week').add(1, 'day'));
+    } else if (filterType === 'week') {
+      setWeekStart(filterValue.startOf('week').add(1, 'day'));
+      setSelectedDate(filterValue.startOf('week').add(1, 'day'));
+    } else if (filterType === 'month') {
+      setWeekStart(filterValue.startOf('month').startOf('week').add(1, 'day'));
+      setSelectedDate(filterValue.startOf('month').startOf('week').add(1, 'day'));
+    }
+  }, [filterType, filterValue]);
+
   const getGreeting = () => {
     const hour = currentTime.getHours();
     if (hour < 10) return 'sáng';
@@ -66,13 +85,23 @@ const Dashboard = () => {
   };
 
   const handleCheckIn = () => {
-    // Implement check-in logic
-    console.log('Check-in clicked');
+    if (!selectedWorkSchedule) return;
+    const now = new Date();
+    console.log('Check-in:', {
+      employeeId: employee?._id || employee,
+      workScheduleId: selectedWorkSchedule,
+      time: now.toLocaleTimeString(),
+    });
   };
 
   const handleCheckOut = () => {
-    // Implement check-out logic
-    console.log('Check-out clicked');
+    if (!selectedWorkSchedule) return;
+    const now = new Date();
+    console.log('Check-out:', {
+      employeeId: employee?._id || employee,
+      workScheduleId: selectedWorkSchedule,
+      time: now.toLocaleTimeString(),
+    });
   };
 
   // Helper: get 7 days of current week
@@ -181,6 +210,8 @@ const Dashboard = () => {
                 <Select
                   style={{ width: 200 }}
                   placeholder="Chọn ca làm"
+                  value={selectedWorkSchedule}
+                  onChange={setSelectedWorkSchedule}
                 >
                   {workSchedules.map((schedule) => (
                     <Select.Option key={schedule._id} value={schedule._id}>
@@ -189,10 +220,10 @@ const Dashboard = () => {
                   ))}
                 </Select>
                 <Space>
-                  <Button type="primary" onClick={handleCheckIn}>
+                  <Button type="primary" onClick={handleCheckIn} disabled={!selectedWorkSchedule}>
                     Check-in
                   </Button>
-                  <Button type="primary" danger onClick={handleCheckOut}>
+                  <Button type="primary" danger onClick={handleCheckOut} disabled={!selectedWorkSchedule}>
                     Check-out
                   </Button>
                 </Space>
@@ -201,6 +232,22 @@ const Dashboard = () => {
           </Card>
         ) : (
           <Card bodyStyle={{ background: '#fff', padding: 24, borderRadius: 16 }} style={{ background: '#fff', borderRadius: 16 }}>
+            {/* Bộ lọc ngày/tuần/tháng và DatePicker */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 12, justifyContent: 'center' }}>
+              <Select value={filterType} onChange={val => setFilterType(val)} style={{ width: 120 }}>
+                <Select.Option value="day">Ngày</Select.Option>
+                <Select.Option value="week">Tuần</Select.Option>
+                <Select.Option value="month">Tháng</Select.Option>
+              </Select>
+              <DatePicker
+                picker={filterType}
+                value={filterValue}
+                onChange={val => setFilterValue(val || dayjs())}
+                format={filterType === 'month' ? 'MM/YYYY' : 'DD/MM/YYYY'}
+                allowClear={false}
+                style={{ width: 160 }}
+              />
+            </div>
             {/* Thanh chọn ngày ngang */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, justifyContent: 'center', gap: 8 }}>
               <Button icon={<LeftOutlined />} onClick={handlePrevWeek} style={{ background: '#f5f5f5', color: '#222', border: 'none' }} />
