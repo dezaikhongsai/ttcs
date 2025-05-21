@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Select, Space, Typography, Card, Calendar, Badge, Tag } from 'antd';
+import { Button, Select, Space, Typography, Card, Calendar} from 'antd';
+import { CheckCircleOutlined, CalendarOutlined } from '@ant-design/icons';
 import { getWorkSchedule, getShifts } from './services/dashboard.service';
 import dayjs from 'dayjs';
 
@@ -135,12 +136,14 @@ const Dashboard = () => {
             <Button
               type={viewMode === 'attendance' ? 'primary' : 'default'}
               onClick={() => setViewMode('attendance')}
+              icon={<CheckCircleOutlined />}
             >
               Chấm công
             </Button>
             <Button
               type={viewMode === 'schedule' ? 'primary' : 'default'}
               onClick={() => setViewMode('schedule')}
+              icon={<CalendarOutlined />}
             >
               Lịch làm
             </Button>

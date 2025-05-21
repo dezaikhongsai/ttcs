@@ -4,6 +4,7 @@ import { getWorkSchedule , addAssignment , getAssignmentInRole } from './service
 import CalendarView from './components/CalendarView';
 import ScheduleTable from './components/AssignmentTable';
 import { useSelector } from 'react-redux';
+import { CheckOutlined, CalendarOutlined } from '@ant-design/icons';
 const ShiftRegistration = () => {
   const [schedules, setSchedules] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -118,12 +119,14 @@ const ShiftRegistration = () => {
             type={isCalendarView ? 'primary' : 'default'}
             onClick={() => setIsCalendarView(true)}
             style={{ marginRight: '10px' }}
+            icon={<CheckOutlined />}
           >
             Đăng ký lịch
           </Button>
           <Button
             type={!isCalendarView ? 'primary' : 'default'}
             onClick={() => setIsCalendarView(false)}
+            icon={<CalendarOutlined />}
           >
             Lịch đã đăng ký
           </Button>

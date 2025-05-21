@@ -6,7 +6,6 @@ import { logoutUser } from '../redux/authAction';
 const { Header, Content, Sider } = Layout;
 import { useState } from 'react';
 import {
-  DashboardOutlined,
   CalendarOutlined,
   TeamOutlined,
   UserOutlined,
@@ -18,7 +17,8 @@ import {
   OrderedListOutlined,
   LogoutOutlined,
   MenuUnfoldOutlined,
-  MenuFoldOutlined
+  MenuFoldOutlined,
+  AreaChartOutlined
 } from '@ant-design/icons';
 
 const MainLayout = ({ children }) => {
@@ -41,7 +41,7 @@ const MainLayout = ({ children }) => {
   },
   {
     key: '/dashboard',
-    icon: <DashboardOutlined />,
+    icon: <AreaChartOutlined />,
     label: 'Dashboard',
   },
   {
