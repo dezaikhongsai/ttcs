@@ -1,13 +1,32 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { store } from '../redux/store';
+import { logoutSuccess } from '../redux/authSlice';
+
 // Tạo instance của axios
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL + '/api', 
   headers: {
     'Content-Type': 'application/json',
-    },
-    withCredentials: true, 
+  },
+  withCredentials: true, 
 });
+
+// Biến để theo dõi trạng thái refresh token
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
@@ -21,6 +40,7 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -28,7 +48,21 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired or invalid
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Nếu đang trong quá trình refresh token, thêm request vào hàng đợi
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
+          })
+          .catch(err => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
         // Attempt to refresh token
         const { data } = await axios.post(
@@ -37,15 +71,27 @@ apiClient.interceptors.response.use(
           { withCredentials: true }
         );
         
+        // Update token in cookie
+        Cookies.set('token', data.token);
+        
         // Update request header with new token
         originalRequest.headers.Authorization = `Bearer ${data.token}`;
+        
+        // Process all queued requests
+        processQueue(null, data.token);
+        
+        // Retry the original request
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If refresh token fails, redirect to login
+        // If refresh token fails, clear all auth data and redirect to login
         console.error('Token refresh failed:', refreshError);
+        processQueue(refreshError, null);
         Cookies.remove('token');
+        store.dispatch(logoutSuccess());
         window.location.href = '/login';
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
