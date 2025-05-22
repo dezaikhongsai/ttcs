@@ -103,7 +103,13 @@ const MainLayout = ({ children }) => {
   return (
     <Layout className="min-h-screen bg-gray-100"> {/* Thêm màu nền xám nhạt */}
   {/* Header */}
-  <Header className="bg-[#001529] px-6 flex justify-between items-center">
+  <Header className="bg-[#001529] px-6 flex justify-between items-center"
+     style={{
+      position: 'sticky',
+      top: 0, // Giúp header dính lên trên
+      zIndex: 100, // Đảm bảo nổi trên các thành phần khác
+      width: '100%',
+    }}>
     <div className="flex items-center gap-2">
       <img
         src="/logo.png"

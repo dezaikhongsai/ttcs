@@ -64,27 +64,26 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt to refresh token
+        // Gọi API refresh token
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/auth/token`, 
-          {}, 
+          `${import.meta.env.VITE_API_URL}/api/auth/refresh-token`,
+          {},
           { withCredentials: true }
         );
-        
-        // Update token in cookie
-        Cookies.set('token', data.token);
-        
-        // Update request header with new token
-        originalRequest.headers.Authorization = `Bearer ${data.token}`;
-        
-        // Process all queued requests
-        processQueue(null, data.token);
-        
-        // Retry the original request
+
+        // Lưu access token mới vào cookie
+        Cookies.set('token', data.accessToken);
+
+        // Gắn access token mới vào header
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+
+        // Xử lý các request đang chờ
+        processQueue(null, data.accessToken);
+
+        // Gửi lại request gốc
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If refresh token fails, clear all auth data and redirect to login
-        console.error('Token refresh failed:', refreshError);
+        // Nếu refresh thất bại, logout
         processQueue(refreshError, null);
         Cookies.remove('token');
         store.dispatch(logoutSuccess());

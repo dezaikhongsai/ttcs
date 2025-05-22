@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+// import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { store, persistor } from './common/redux/store.js';
@@ -10,7 +10,7 @@ const rootElement = document.getElementById('root');
 const root = createRoot(rootElement);
 
 root.render(
-  <StrictMode>
+  // <StrictMode>
     <Provider store={store}>
       <BrowserRouter>
         <PersistGate loading={null} persistor={persistor}>
@@ -18,5 +18,5 @@ root.render(
         </PersistGate>
       </BrowserRouter>
     </Provider>
-  </StrictMode>
+  // </StrictMode>
 );

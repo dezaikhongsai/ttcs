@@ -11,7 +11,7 @@ export const getAllEmployees = async ({ page = 1, limit = 10, name = "", positio
   const skip = (pageNum - 1) * limitNum;
 
   const query = {};
-  if (name) {
+  if (name) { 
     query.name = { $regex: name, $options: "i" };
   }
   if (position) {

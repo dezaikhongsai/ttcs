@@ -79,7 +79,6 @@ export const authorizeRoles = (allowedRoles) => {
         code: 'FORBIDDEN',
       });
     }
-
     next();
   };
 };
