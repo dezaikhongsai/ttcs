@@ -58,3 +58,48 @@ export const register = async (req, res, next) => {
     next(err);
   }
 };
+
+export const refreshToken = async (req, res) => {
+  try {
+    // Lấy refresh token từ cookie hoặc body
+    const token = req.cookies?.refreshToken || req.body.refreshToken;
+    if (!token) {
+      return res.status(401).json({ message: 'Không tìm thấy refresh token' });
+    }
+
+    // Xác minh refresh token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+    }
+
+    // Kiểm tra user tồn tại
+    const user = await User.findById(decoded.sub).populate('employeeId');
+    if (!user) {
+      return res.status(403).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    // Tạo access token mới
+    const payload = { sub: user._id, role: user.role };
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+    });
+
+    // Gửi access token mới qua cookie và response
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      maxAge: 15 * 60 * 1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    res.json({
+      message: 'Làm mới access token thành công',
+      accessToken
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server khi refresh token' });
+  }
+};
