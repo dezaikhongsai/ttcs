@@ -7,8 +7,8 @@ const timeSheetSchema = new mongoose.Schema({
         required: true
     },
     day: {type : Date, required: true},
-    checkIn: {type: Date, required: true},
-    checkOut: {type: Date, required: true},
+    checkIn: {type: String},
+    checkOut: {type: String},
     status : {
         type: String,
         enum: ['Đang làm việc', 'Hoàn thành', 'Ngoài ca làm'],
@@ -19,6 +19,8 @@ const timeSheetSchema = new mongoose.Schema({
         ref: 'WorkSchedule',
         required: true
     },  
+    bonus: {type : Number , default: 0},
+    fine: {type : Number , default:0},
 })
 const TimeSheet = mongoose.model('TimeSheet', timeSheetSchema);
 export default TimeSheet;

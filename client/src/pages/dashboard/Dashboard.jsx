@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Select, Space, Typography, Card, Row, Col, DatePicker } from 'antd';
+import { Button, Select, Space, Typography, Card, Row, Col, DatePicker, message } from 'antd';
 import { CheckCircleOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { getWorkSchedule, getShifts, getEmployeeWithPosition } from './services/dashboard.service';
+import { getWorkSchedule, getShifts, getEmployeeWithPosition , createTimeSheet, updateTimeSheet } from './services/dashboard.service';
 import dayjs from 'dayjs';
 import weekday from 'dayjs/plugin/weekday';
 dayjs.extend(weekday);
 
 const { Title, Text } = Typography;
+
+// Hàm helper để lấy thông tin timesheet từ localStorage
+const getStoredTimesheet = () => {
+  const storedData = localStorage.getItem('currentTimesheet');
+  console.log('Stored timesheet data:', storedData); // Log dữ liệu từ localStorage
+  if (!storedData) return null;
+  return JSON.parse(storedData);
+};
 
 const Dashboard = () => {
   const employee = useSelector((state) => state.auth.user?.employeeId);
@@ -21,6 +29,37 @@ const Dashboard = () => {
   const [filterType, setFilterType] = useState('day'); // 'day' | 'week' | 'month'
   const [filterValue, setFilterValue] = useState(dayjs());
   const [selectedWorkSchedule, setSelectedWorkSchedule] = useState(null);
+  // const [timesheet , setTimesheet] = useState(null);
+  const [timeCheckIn , setTimeCheckIn] = useState("");
+  const [timesheetId , setTimesheetId] = useState("");
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+
+  // Load timesheet data from localStorage on component mount
+  useEffect(() => {
+    const storedTimesheet = getStoredTimesheet();
+    console.log('Loading timesheet from localStorage:', storedTimesheet); // Log khi load dữ liệu
+    if (storedTimesheet && storedTimesheet.employeeId === (employee?._id || employee)) {
+      const today = dayjs().format('YYYY-MM-DD');
+      const storedDate = dayjs(storedTimesheet.day).format('YYYY-MM-DD');
+      console.log('Today:', today, 'Stored date:', storedDate); // Log để so sánh ngày
+      
+      // Chỉ khôi phục timesheet nếu là cùng ngày
+      if (today === storedDate) {
+        setSelectedWorkSchedule(storedTimesheet.workScheduleId);
+        setTimeCheckIn(storedTimesheet.checkIn);
+        setTimesheetId(storedTimesheet.timesheetId);
+        setIsCheckedIn(true);
+        console.log('Restored timesheet state:', {
+          workScheduleId: storedTimesheet.workScheduleId,
+          checkIn: storedTimesheet.checkIn,
+          timesheetId: storedTimesheet.timesheetId
+        }); // Log state đã được khôi phục
+      } else {
+        console.log('Removing old timesheet data'); // Log khi xóa dữ liệu cũ
+        localStorage.removeItem('currentTimesheet');
+      }
+    }
+  }, [employee]);
 
   // Update current time every second
   useEffect(() => {
@@ -84,24 +123,86 @@ const Dashboard = () => {
     return 'tối';
   };
 
-  const handleCheckIn = () => {
-    if (!selectedWorkSchedule) return;
-    const now = new Date();
-    console.log('Check-in:', {
-      employeeId: employee?._id || employee,
-      workScheduleId: selectedWorkSchedule,
-      time: now.toLocaleTimeString(),
-    });
+const handleCheckIn = async () => {
+  if (!selectedWorkSchedule) return;
+  const day = dayjs().utc().startOf('day').format('YYYY-MM-DDTHH:mm:ss.SSS[+00:00]');
+  const timeSheet = {
+    employeeId: employee?._id || employee,
+    day: day,
+    workScheduleId: selectedWorkSchedule,
+    checkIn: dayjs(new Date()).format('HH:mm'),
+    checkOut: '',
+    status: "Đang làm việc",
   };
 
-  const handleCheckOut = () => {
+  try {
+    console.log('Sending check-in request:', timeSheet);
+    const res = await createTimeSheet(timeSheet);
+    if (res.success === true) {
+      // Lưu thông tin timesheet vào localStorage
+      const timesheetData = {
+        employeeId: res.data.employeeId,
+        workScheduleId: res.data.workScheduleId,
+        checkIn: res.data.checkIn,
+        timesheetId: res.data._id,
+        day: res.data.day
+      };
+      console.log('Saving timesheet to localStorage:', timesheetData);
+      localStorage.setItem('currentTimesheet', JSON.stringify(timesheetData));
+
+      // Verify data was saved
+      const savedData = localStorage.getItem('currentTimesheet');
+      console.log('Verified saved data:', savedData);
+
+      setTimeCheckIn(res.data.checkIn);
+      setTimesheetId(res.data._id);
+      setIsCheckedIn(true);
+      message.success(res.message || "Chấm công thành công!");
+    } else {
+      console.error('Check-in failed:', res.message);
+      message.error(res.message || "Chấm công thất bại!");
+    }
+  } catch (error) {
+    console.error('Check-in error:', error);
+    message.error("Có lỗi xảy ra khi chấm công!");
+  }
+};
+  const handleCheckOut = async () => {
+    const day = dayjs().utc().startOf('day').format('YYYY-MM-DDTHH:mm:ss.SSS[+00:00]');
     if (!selectedWorkSchedule) return;
-    const now = new Date();
-    console.log('Check-out:', {
+
+    const checkoutData = {
       employeeId: employee?._id || employee,
+      day: day,
       workScheduleId: selectedWorkSchedule,
-      time: now.toLocaleTimeString(),
-    });
+      checkIn: timeCheckIn,
+      checkOut: dayjs(new Date()).format('HH:mm'),
+      status: "Đã hoàn thành",
+    };
+
+    try {
+      console.log('Sending check-out request:', checkoutData); // Log request check-out
+      const res = await updateTimeSheet(timesheetId, checkoutData);
+      if (res) {
+        console.log('Removing timesheet from localStorage'); // Log trước khi xóa
+        localStorage.removeItem('currentTimesheet');
+        
+        // Verify data was removed
+        const remainingData = localStorage.getItem('currentTimesheet');
+        console.log('Verified localStorage after removal:', remainingData); // Log để kiểm tra sau khi xóa
+
+        setIsCheckedIn(false);
+        setTimeCheckIn("");
+        setTimesheetId("");
+        message.success("Đã checkout thành công!");
+      } else {
+        console.error('Check-out failed:', res.message); // Log lỗi nếu có
+        message.error(res.message || "Checkout thất bại!");
+      }
+    } catch (error) {
+      console.error('Check-out error:', error); // Log lỗi exception
+      message.error("Có lỗi xảy ra khi checkout!");
+    }
   };
 
   // Helper: get 7 days of current week
@@ -212,6 +313,7 @@ const Dashboard = () => {
                   placeholder="Chọn ca làm"
                   value={selectedWorkSchedule}
                   onChange={setSelectedWorkSchedule}
+                  disabled={isCheckedIn}
                 >
                   {workSchedules.map((schedule) => (
                     <Select.Option key={schedule._id} value={schedule._id}>
@@ -220,13 +322,21 @@ const Dashboard = () => {
                   ))}
                 </Select>
                 <Space>
-                  <Button type="primary" onClick={handleCheckIn} disabled={!selectedWorkSchedule}>
-                    Check-in
-                  </Button>
-                  <Button type="primary" danger onClick={handleCheckOut} disabled={!selectedWorkSchedule}>
-                    Check-out
-                  </Button>
+                  {!isCheckedIn ? (
+                    <Button type="primary" onClick={handleCheckIn} disabled={!selectedWorkSchedule}>
+                      Check-in
+                    </Button>
+                  ) : (
+                    <Button type="primary" danger onClick={handleCheckOut}>
+                      Check-out
+                    </Button>
+                  )}
                 </Space>
+                {isCheckedIn && (
+                  <Text type="success">
+                    Đã check-in lúc: {timeCheckIn}
+                  </Text>
+                )}
               </Space>
             </div>
           </Card>

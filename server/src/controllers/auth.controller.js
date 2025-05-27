@@ -62,7 +62,13 @@ export const register = async (req, res, next) => {
 export const refreshToken = async (req, res) => {
   try {
     // Lấy refresh token từ cookie hoặc body
-    const token = req.cookies?.refreshToken || req.body.refreshToken;
+    let token = req.cookies?.refreshToken || req.body.refreshToken;
+    if (!token && req.headers['authorization']) {
+      const authHeader = req.headers['authorization'];
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
     if (!token) {
       return res.status(401).json({ message: 'Không tìm thấy refresh token' });
     }

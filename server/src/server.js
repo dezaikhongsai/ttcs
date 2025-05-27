@@ -9,6 +9,7 @@ import shiftRoute from './routes/shift.route.js'
 import assignmentRoute from './routes/assignment.route.js';
 import workScheduleRoute from './routes/workSchedule.route.js';
 import timesheetRoute from './routes/timesheet.route.js';
+import payrollRoute from './routes/payroll.route.js';
 dotenv.config();
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api', shiftRoute);
 app.use('/api/assignment', assignmentRoute);
 app.use('/api/workSchedule', workScheduleRoute);
 app.use('/api/timesheet', timesheetRoute);
+app.use('/api/payroll', payrollRoute);
 
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 8081;
