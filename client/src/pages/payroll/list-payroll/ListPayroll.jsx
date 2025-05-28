@@ -135,7 +135,7 @@ const ListPayroll = () => {
       width: 100 ,
       render: (_, record) => (
         <Space>
-          <Button type="primary" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>Xem</Button>
+          <Button type="primary" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>Xem chi tiết</Button>
         </Space>
       ),
     },
