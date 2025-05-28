@@ -154,6 +154,7 @@ const PayrollTable = ({ onDataChange }) => {
             )
         }
     ];
+    const totalSalaryAll = payrollData.reduce((sum, item) => sum + (item.totalSalary || 0), 0);
 
     return (
         <Card>
@@ -174,6 +175,9 @@ const PayrollTable = ({ onDataChange }) => {
                     <span style={{ marginRight: 8 }}>
                         Tổng số bảng lương: <strong>{payrollData.length}</strong>
                     </span>
+                </div>
+                 <div style={{ marginBottom: 16, textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
+                    Tổng lương kỳ này: {formatCurrency(totalSalaryAll)}
                 </div>
             </div>
 
