@@ -14,7 +14,7 @@ router.use(verifyToken);
 router.get('/', getAllAssignmentsController);
 router.get('/:employeeId', getAssignmentsByEmployeeIdController); 
 router.post('/', createAssignmentController);
-router.delete('/:id',authorizeRoles(['Admin', 'Manager']), deleteAssignmentController);
+router.delete('/:id', deleteAssignmentController);
 router.put('/status/:id', authorizeRoles(['Admin', 'Manager']), updateAssignmentStatusController);
 
 export default router;
