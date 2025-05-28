@@ -43,9 +43,10 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
         setTimeSheetData([]);
       }
     } catch (error) {
-      console.error("Error fetching timesheet data:", error);
-      message.error('Có lỗi khi tải dữ liệu chấm công');
-      setTimeSheetData([]); // Reset data when error occurs
+        const errorMessage = error.response?.data?.message || error.message || 'Có lỗi khi tải dữ liệu chấm công';
+        console.error("Error:", error);
+        message.error(errorMessage);
+        setTimeSheetData([]); // Reset data when error occurs
     } finally {
       setLoading(false);
     }
@@ -60,8 +61,9 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
         setSalaryData(res.data);
       }
     } catch (error) {
-      console.error("Error fetching salary data:", error);
-      message.error('Có lỗi khi tải thông tin lương');
+       const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+      console.error("Error fetching timesheet data:", msg);
+      message.error(msg);
       setSalaryData(null);
     }
   }
@@ -84,7 +86,7 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
   };
 
   const handleEditTimesheet = (timesheet) => {
-    console.log('Raw timesheet data:', timesheet); // Debug log
+    console.log('Raw timesheet data:', timesheet); 
 
     if (!timesheet) {
       message.error('Không có dữ liệu chấm công');
@@ -93,7 +95,6 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
 
     setTimeSheetFormMode('edit');
     
-    // Format the timesheet data to match the form's expected structure
     const formattedTimesheet = {
       day: timesheet.date,
       workScheduleId: timesheet.workScheduleId, // Just use the ID directly
@@ -128,7 +129,9 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
         if (res.success) {
           message.success('Thêm chấm công thành công!');
         } else {
-          throw new Error(res.message || 'Thêm chấm công thất bại!');
+            const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+            console.error("Error fetching timesheet data:", msg);
+            message.error(msg);
         }
       } else {
         // Update existing timesheet
@@ -141,7 +144,9 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
         if (res.success) {
           message.success('Cập nhật chấm công thành công!');
         } else {
-          throw new Error(res.message || 'Cập nhật chấm công thất bại!');
+            const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+            console.error("Error fetching timesheet data:", msg);
+            message.error(msg);
         }
       }
       
@@ -160,14 +165,16 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
           onDataChange();
         }
       } catch (error) {
-        console.error('Error refreshing data:', error);
-        message.error('Có lỗi khi tải lại dữ liệu');
+        const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+        console.error("Error fetching timesheet data:", msg);
+        message.error(msg);
       } finally {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error submitting timesheet:', error);
-      message.error(error.message || 'Có lỗi xảy ra!');
+      const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+      console.error("Error fetching timesheet data:", msg);
+      message.error(msg);
     }
   };
 
@@ -192,9 +199,10 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
             onDataChange();
           }
         } catch (error) {
-          console.error('Error refreshing data:', error);
-          message.error('Có lỗi khi tải lại dữ liệu');
-        }
+          const msg = error?.response?.data?.message || error?.message || 'Có lỗi khi tải dữ liệu chấm công';
+          console.error("Error fetching timesheet data:", msg);
+          message.error(msg);
+            }
       } else {
         throw new Error('Xóa ca làm thất bại');
       }
@@ -230,15 +238,16 @@ const ModalDetail = ({ visible, onCancel, record, onDataChange }) => {
         if (response.success) {
             message.success('Lưu phiếu lương thành công!');
             if (onDataChange) {
-                onDataChange(); // Cập nhật lại dữ liệu ở component cha
+                onDataChange();
             }
-            onCancel(); // Đóng modal
+            onCancel();
         } else {
-            throw new Error(response.message || 'Lưu phiếu lương thất bại!');
+            throw new Error(response.message);
         }
     } catch (error) {
+        const errorMessage = error.response?.data?.message || error.message || 'Có lỗi khi lưu phiếu lương!';
         console.error('Error saving payroll:', error);
-        message.error(error.message || 'Có lỗi khi lưu phiếu lương!');
+        message.error(errorMessage);
     }
   };
 
