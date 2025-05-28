@@ -1,5 +1,7 @@
 import { authenticateUser } from '../services/auth.service.js';
 import { registerUser } from '../services/auth.service.js';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.model.js';
 
 export const login = async (req, res, next) => {
   try {
@@ -61,51 +63,80 @@ export const register = async (req, res, next) => {
 
 export const refreshToken = async (req, res) => {
   try {
-    // Lấy refresh token từ cookie hoặc body
-    let token = req.cookies?.refreshToken || req.body.refreshToken;
-    if (!token && req.headers['authorization']) {
+    // Lấy refresh token từ cookie hoặc authorization header
+    let refreshToken = req.cookies?.refreshToken;
+
+    // Nếu không có trong cookie, kiểm tra trong authorization header
+    if (!refreshToken && req.headers['authorization']) {
       const authHeader = req.headers['authorization'];
       if (authHeader.startsWith('Bearer ')) {
-        token = authHeader.split(' ')[1];
+        refreshToken = authHeader.split(' ')[1];
       }
     }
-    if (!token) {
-      return res.status(401).json({ message: 'Không tìm thấy refresh token' });
+
+    // Kiểm tra refresh token có tồn tại không
+    if (!refreshToken) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Refresh token không được cung cấp',
+        code: 'REFRESH_TOKEN_MISSING'
+      });
     }
 
     // Xác minh refresh token
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch (err) {
-      return res.status(403).json({ message: 'Refresh token không hợp lệ hoặc đã hết hạn' });
+      if (err.name === 'TokenExpiredError') {
+        return res.status(403).json({
+          success: false,
+          message: 'Refresh token đã hết hạn, vui lòng đăng nhập lại',
+          code: 'REFRESH_TOKEN_EXPIRED'
+        });
+      }
+      return res.status(403).json({
+        success: false,
+        message: 'Refresh token không hợp lệ',
+        code: 'REFRESH_TOKEN_INVALID'
+      });
     }
 
     // Kiểm tra user tồn tại
     const user = await User.findById(decoded.sub).populate('employeeId');
     if (!user) {
-      return res.status(403).json({ message: 'Người dùng không tồn tại' });
+      return res.status(403).json({
+        success: false,
+        message: 'Người dùng không tồn tại',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
     // Tạo access token mới
     const payload = { sub: user._id, role: user.role };
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || '15m'
     });
 
     // Gửi access token mới qua cookie và response
-    res.cookie('token', accessToken, {
+    res.cookie('token', newAccessToken, {
       httpOnly: true,
-      maxAge: 15 * 60 * 1000,
+      maxAge: 15 * 60 * 1000, // 15 phút
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'
     });
 
     res.json({
+      success: true,
       message: 'Làm mới access token thành công',
-      accessToken
+      accessToken: newAccessToken
     });
   } catch (err) {
-    res.status(500).json({ message: 'Lỗi server khi refresh token' });
+    console.error('Refresh token error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi refresh token',
+      code: 'SERVER_ERROR'
+    });
   }
 };
