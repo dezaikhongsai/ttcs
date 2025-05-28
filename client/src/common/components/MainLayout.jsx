@@ -26,80 +26,101 @@ const MainLayout = ({ children }) => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
   const [collapsed, setCollapsed] = useState(false);
+
+  // Kiểm tra xem người dùng có phải là quản lý hoặc admin không
+  const isManagerOrAdmin = user?.employeeId?.position === 'Quản lý' || user?.role === 'Admin';
+
   const handleLogout = () => {
     dispatch(logoutUser()).then(() => {
         navigate('/login', { replace: true });
         message.success('Đăng xuất thành công!');
     });
   };
+
   const location = useLocation();
-  const items = [
-  {
-    key: 'toggle',
-    icon: collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />,
-    label: collapsed ? 'Mở rộng' : 'Thu gọn',
-  },
-  {
-    key: '/dashboard',
-    icon: <AreaChartOutlined />,
-    label: 'Dashboard',
-  },
-  {
-    key: 'schedule',
-    icon: <CalendarOutlined />,
-    label: 'Lịch',
-    children: [
+
+  // Tạo danh sách menu dựa trên quyền
+  const getMenuItems = () => {
+    const baseItems = [
       {
-        key: '/schedule/assign',
-        icon: <ScheduleOutlined />,
-        label: 'Đăng ký lịch',
+        key: 'toggle',
+        icon: collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />,
+        label: collapsed ? 'Mở rộng' : 'Thu gọn',
       },
       {
+        key: '/dashboard',
+        icon: <AreaChartOutlined />,
+        label: 'Dashboard',
+      },
+      {
+        key: 'schedule',
+        icon: <CalendarOutlined />,
+        label: 'Lịch',
+        children: [
+          {
+            key: '/schedule/assign',
+            icon: <ScheduleOutlined />,
+            label: 'Đăng ký lịch',
+          },
+        ],
+      },
+      {
+        key: 'employee',
+        icon: <TeamOutlined />,
+        label: 'Nhân sự',
+        children: [
+          {
+            key: '/employee/infor',
+            icon: <UserOutlined />,
+            label: 'Thông tin cá nhân',
+          },
+        ],
+      },
+      {
+        key: 'payroll',
+        icon: <DollarOutlined />,
+        label: 'Lương',
+        children: [
+          {
+            key: '/payroll/employee',
+            icon: <ProfileOutlined />,
+            label: 'Lương cá nhân',
+          },
+        ],
+      },
+    ];
+
+    // Thêm các menu chỉ dành cho quản lý và admin
+    if (isManagerOrAdmin) {
+      // Thêm menu Sắp xếp lịch
+      baseItems.find(item => item.key === 'schedule')?.children.push({
         key: '/schedule/set',
         icon: <OrderedListOutlined />,
         label: 'Sắp xếp lịch',
-      },
-    ],
-  },
-  {
-    key: 'employee',
-    icon: <TeamOutlined />,
-    label: 'Nhân sự',
-    children: [
-      {
+      });
+
+      // Thêm menu Thống kê nhân sự
+      baseItems.find(item => item.key === 'employee')?.children.push({
         key: '/employee/list',
         icon: <SolutionOutlined />,
         label: 'Thống kê nhân sự',
-      },
-      {
-        key: '/employee/infor',
-        icon: <UserOutlined />,
-        label: 'Thông tin cá nhân',
-      },
-    ],
-  },
-  {
-    key: 'payroll',
-    icon: <DollarOutlined />,
-    label: 'Lương',
-    children: [
-      {
+      });
+
+      // Thêm menu Thống kê lương
+      baseItems.find(item => item.key === 'payroll')?.children.push({
         key: '/payroll/list',
         icon: <BarChartOutlined />,
         label: 'Thống kê lương',
-      },
-      {
-        key: '/payroll/employee',
-        icon: <ProfileOutlined />,
-        label: 'Lương chi tiết',
-      },
-    ],
-  },
-];
+      });
+    }
+
+    return baseItems;
+  };
 
   const toggleCollapsed = () => {
     setCollapsed(prev => !prev);
   };
+
   return (
     <Layout className="min-h-screen bg-gray-100"> {/* Thêm màu nền xám nhạt */}
   {/* Header */}
@@ -152,7 +173,7 @@ const MainLayout = ({ children }) => {
         mode="inline"
         defaultSelectedKeys={['1']}
         theme="dark"
-        items={items}
+        items={getMenuItems()}
         onClick={({ key }) => {
           if (key === 'toggle') {
             toggleCollapsed();

@@ -34,7 +34,7 @@ const Login = () => {
         {/* Hàng chứa logo + title */}
         <div className="flex items-center mb-2">
             <img src='/logo.png' alt="TTCS CAFFE" className="h-16 mr-4" />
-            <Title level={3} className="mb-0">Chào mừng quay trở lại</Title>
+            <Title level={3} className="mb-0">   Đăng nhập </Title>
         </div>
         {/* Dòng phụ text */}
         <Text type="secondary">Đăng nhập vào TTCS CAFFE</Text>
