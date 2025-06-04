@@ -4,7 +4,6 @@ const payrollSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employee',
         required: true,
-        unique: true
     },
     name :{
         type: String,
@@ -28,7 +27,7 @@ const payrollSchema = mongoose.Schema({
 } , {timestamps: true})
 
 // Thêm compound index cho employeeId và term
-payrollSchema.index({ employeeId: 1, term: 1 }, { unique: true });
+// payrollSchema.index({ employeeId: 1, term: 1 }, { unique: true });
 
 const Payroll = mongoose.model('Payroll', payrollSchema);
 export default Payroll;
