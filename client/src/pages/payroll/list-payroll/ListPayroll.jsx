@@ -17,10 +17,6 @@ const ListPayroll = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-
-    // const paginatedData = payrollData.slice((current - 1) * pageSize, current * pageSize);
-
-  // Hàm xử lý thay đổi trang và pageSize
   const handlePaginationChange = (page, pageSizeNew) => {
     setCurrent(page);
     setPageSize(pageSizeNew);

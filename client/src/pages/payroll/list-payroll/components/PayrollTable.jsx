@@ -17,9 +17,8 @@ const PayrollTable = ({ onDataChange }) => {
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
         }).format(value) + ' VND';
-      };
+    };
     
-
     const fetchPayrollData = async () => {
         if (!selectedTerm) return;
         
@@ -79,13 +78,6 @@ const PayrollTable = ({ onDataChange }) => {
             align: 'center',
             render: (_, __, index) => index + 1
         },
-        // {
-        //     title: 'Mã nhân viên',
-        //     dataIndex: 'employeeId',
-        //     key: 'employeeId',
-        //     width: 120,
-        //     align: 'center'
-        // },
         {
             title: 'Tên nhân viên',
             dataIndex: 'name',
@@ -101,7 +93,7 @@ const PayrollTable = ({ onDataChange }) => {
         },
         {
             title: 'Lương cơ bản',
-            dataIndex: 'baseSalary',
+            dataIndex: ['calculatedValues', 'baseSalary'],
             key: 'baseSalary',
             width: 150,
             align: 'right',
@@ -109,7 +101,7 @@ const PayrollTable = ({ onDataChange }) => {
         },
         {
             title: 'Tổng lương',
-            dataIndex: 'totalSalary',
+            dataIndex: ['calculatedValues', 'totalSalary'],
             key: 'totalSalary',
             width: 150,
             align: 'right',
@@ -129,13 +121,6 @@ const PayrollTable = ({ onDataChange }) => {
             align: 'center',
             render: (_, record) => (
                 <Space>
-                    {/* <Button
-                        type="primary"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleViewDetail(record)}
-                    >
-                        Chi tiết
-                    </Button> */}
                     <Popconfirm
                         title="Bạn có chắc chắn muốn xóa bảng lương này?"
                         onConfirm={() => handleDelete(record)}
@@ -154,7 +139,9 @@ const PayrollTable = ({ onDataChange }) => {
             )
         }
     ];
-    const totalSalaryAll = payrollData.reduce((sum, item) => sum + (item.totalSalary || 0), 0);
+
+    const totalSalaryAll = payrollData.reduce((sum, item) => 
+        sum + (item.calculatedValues?.totalSalary || 0), 0);
 
     return (
         <Card>
@@ -176,7 +163,7 @@ const PayrollTable = ({ onDataChange }) => {
                         Tổng số bảng lương: <strong>{payrollData.length}</strong>
                     </span>
                 </div>
-                 <div style={{ marginBottom: 16, textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
+                <div style={{ marginBottom: 16, textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
                     Tổng lương kỳ này: {formatCurrency(totalSalaryAll)}
                 </div>
             </div>
