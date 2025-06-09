@@ -27,5 +27,4 @@ router.post('/logout', logout);
 router.post('/register', register);
 router.post('/refresh-token', refreshToken);
 
-
 export default router;

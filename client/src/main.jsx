@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { store, persistor } from './common/redux/store.js';
 import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
-import { PersistGate } from 'redux-persist/integration/react'; // ✅ Thêm dòng này
+import { PersistGate } from 'redux-persist/integration/react'; 
 
 const rootElement = document.getElementById('root');
 const root = createRoot(rootElement);
