@@ -28,7 +28,6 @@ export const createTimeSheet = async (timeSheetData) => {
         err.status = 400;
         throw err;
     }
-
     // Nếu hợp lệ, tạo timesheet
     const timeSheet = new TimeSheet({
         employeeId,
@@ -44,7 +43,6 @@ export const createTimeSheet = async (timeSheetData) => {
     await timeSheet.save();
     return timeSheet;
 };
-
 export const udateTimeSheet = async (id , timeSheetData) => {
     try {
         const timeSheet = await TimeSheet.findByIdAndUpdate(id, timeSheetData);
@@ -258,7 +256,6 @@ export const getSalaryByEmployeeId = async (employeeId, month, year) => {
             fine: parseFloat(totalFine.toFixed(2)),
             totalSalary: parseFloat((baseSalary + totalBonus - totalFine).toFixed(2))
         };
-
         return salary;
     } catch (error) {
         if (error.status) throw error;
