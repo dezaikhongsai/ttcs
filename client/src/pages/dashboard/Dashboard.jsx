@@ -362,30 +362,46 @@ const handleCheckIn = async () => {
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, justifyContent: 'center', gap: 8 }}>
               <Button icon={<LeftOutlined />} onClick={handlePrevWeek} style={{ background: '#f5f5f5', color: '#222', border: 'none' }} />
               <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 8, maxWidth: 900 }}>
-                {getWeekDays().map((date) => (
-                  <div
-                    key={date.format('YYYY-MM-DD')}
-                    style={{
-                      padding: '12px 0',
-                      width: 110,
-                      borderRadius: 12,
-                      background: date.isSame(selectedDate, 'day') ? '#e6f7ff' : '#f5f5f5',
-                      color: date.isSame(selectedDate, 'day') ? '#1890ff' : '#222',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      border: date.isSame(selectedDate, 'day') ? '2px solid #1890ff' : 'none',
-                      fontWeight: date.isSame(selectedDate, 'day') ? 700 : 400,
-                      fontSize: 17,
-                      boxShadow: date.isSame(selectedDate, 'day') ? '0 2px 8px #1890ff40' : 'none',
-                      transition: 'all 0.2s',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    }}
-                    onClick={() => setSelectedDate(date)}
-                  >
-                    <div>{date.format('DD/MM')}</div>
-                    <div style={{ fontSize: 18 }}>{['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'][date.day() === 0 ? 6 : date.day() - 1]}</div>
-                  </div>
-                ))}
+                {getWeekDays().map((date) => {
+                  const shiftsOfDay = getShiftsBySelectedDate(date);
+                  // Gom tất cả nhân viên của các ca, loại trùng theo id
+                  const allEmployees = new Set();
+                  shiftsOfDay.forEach(shift => {
+                    (shift.employees || []).forEach(emp => {
+                      if (emp._id) allEmployees.add(emp._id);
+                      else if (emp.employeeId) allEmployees.add(emp.employeeId);
+                      else if (emp.employee && typeof emp.employee === 'object' && emp.employee._id) allEmployees.add(emp.employee._id);
+                      else if (typeof emp.employee === 'string') allEmployees.add(emp.employee);
+                    });
+                  });
+                  return (
+                    <div
+                      key={date.format('YYYY-MM-DD')}
+                      style={{
+                        padding: '12px 0',
+                        width: 110,
+                        borderRadius: 12,
+                        background: date.isSame(selectedDate, 'day') ? '#e6f7ff' : '#f5f5f5',
+                        color: date.isSame(selectedDate, 'day') ? '#1890ff' : '#222',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        border: date.isSame(selectedDate, 'day') ? '2px solid #1890ff' : 'none',
+                        fontWeight: date.isSame(selectedDate, 'day') ? 700 : 400,
+                        fontSize: 17,
+                        boxShadow: date.isSame(selectedDate, 'day') ? '0 2px 8px #1890ff40' : 'none',
+                        transition: 'all 0.2s',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      }}
+                      onClick={() => setSelectedDate(date)}
+                    >
+                      <div>{date.format('DD/MM')}</div>
+                      <div style={{ fontSize: 18 }}>{['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'][date.day() === 0 ? 6 : date.day() - 1]}</div>
+                      <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>
+                        {shiftsOfDay.length} ca, {allEmployees.size} nhân viên
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <Button icon={<RightOutlined />} onClick={handleNextWeek} style={{ background: '#f5f5f5', color: '#222', border: 'none' }} />
             </div>
