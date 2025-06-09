@@ -164,7 +164,7 @@ const handleCheckIn = async () => {
     }
   } catch (error) {
     console.error('Check-in error:', error);
-    message.error("Có lỗi xảy ra khi chấm công!");
+    message.error("Lỗi! Hãy kiểm tra lịch làm.");
   }
 };
   const handleCheckOut = async () => {
